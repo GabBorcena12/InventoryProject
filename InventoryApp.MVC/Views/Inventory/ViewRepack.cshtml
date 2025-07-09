@@ -1,0 +1,54 @@
+﻿@model InventoryApp.Core.Models.RepackItem
+
+@{
+    ViewData["Title"] = "Stock Details";
+}
+
+<div class="container-fluid m-4">
+    <h2 class="mb-4 text-primary fw-bold">@ViewData["Title"]</h2>
+
+    @await Html.PartialAsync("_ToastMessages")
+    @await Html.PartialAsync("_ErrorMessage")
+
+    <table class="table table-striped table-bordered align-middle">
+        <tbody>
+            <tr>
+                <th scope="row" class="table-primary" style="width: 25%;">@Html.DisplayNameFor(m => m.ProductName)</th>
+                <td>@Model.QuantityValue @Model.product?.UnitOfMeasure @Model.ProductName</td>
+            </tr>
+            <tr>
+                <th scope="row" class="table-primary">@Html.DisplayNameFor(m => m.VariantCode)</th>
+                <td>@Model.VariantCode</td>
+            </tr>
+            <tr>
+                <th scope="row" class="table-primary">@Html.DisplayNameFor(m => m.PricePerUnit)</th>
+                <td>@Model.PricePerUnit.ToString("N2")</td>
+            </tr>
+            <tr>
+                <th scope="row" class="table-primary">@Html.DisplayNameFor(m => m.Discount)</th>
+                <td>@Model.Discount.ToString("N2")</td>
+            </tr>
+            <tr>
+                <th scope="row" class="table-primary">@Html.DisplayNameFor(m => m.InitialQty)</th>
+                <td>@Model.InitialQty Piece/s</td>
+            </tr>
+            <tr>
+                <th scope="row" class="table-primary">@Html.DisplayNameFor(m => m.SoldQty)</th>
+                <td>@Model.SoldQty Piece/s</td>
+            </tr>
+            <tr>
+                <th scope="row" class="table-primary">@Html.DisplayNameFor(m => m.TotalSales)</th>
+                <td>@Model.TotalSales.ToString("N2")</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-end mt-3 gap-2">
+        <a asp-action="EditRepack" asp-route-id="@Model.Id" class="btn btn-primary">
+            Edit
+        </a>
+        <a asp-action="Repack" asp-route-id="@Model.InventoryId" class="btn btn-secondary">
+            Back to List
+        </a>
+    </div>
+</div>

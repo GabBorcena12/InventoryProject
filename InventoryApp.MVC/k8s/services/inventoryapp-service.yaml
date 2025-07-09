@@ -1,0 +1,16 @@
+﻿# 📄 k8s/services/inventoryapp-service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventoryapp-service
+  labels:
+    app: inventoryapp
+spec:
+  type: LoadBalancer
+  selector:
+    app: inventoryapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

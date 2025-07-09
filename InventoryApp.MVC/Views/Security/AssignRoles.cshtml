@@ -1,0 +1,38 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@model List<InventoryApp.Core.Models.ApplicationUser>
+@inject RoleManager<IdentityRole> RoleManager
+@{
+    ViewData["Title"] = "Assign Roles";
+    var roles = await RoleManager.Roles.ToListAsync();
+}
+
+<h2 class="my-4">Assign Roles</h2>
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Email</th>
+            <th>Assign Role</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Email</td>
+                <td>
+                    <form asp-action="AssignRole" method="post" class="d-flex gap-2">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <select name="role" class="form-select w-auto">
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role.Name">@role.Name</option>
+                            }
+                        </select>
+                        <button class="btn btn-secondary btn-sm">Assign</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

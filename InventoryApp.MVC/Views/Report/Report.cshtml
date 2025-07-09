@@ -1,0 +1,177 @@
+﻿@using System.Text.Json
+@{
+    ViewData["Title"] = ViewBag.ReportTitle;
+    var reportDate = ViewBag.ReportDate;
+    var columns = ViewBag.ReportColumns as List<string>;
+    var data = ViewBag.ReportData as List<List<string>>;
+}
+<script>
+    const reportTitle = "@ViewBag.ReportTitle";
+    const reportDate = "@ViewBag.ReportDate";
+</script>
+
+<div class="container my-5">
+    <div class="row mb-4 align-items-end">
+        <!-- Left Column: Title and Date -->
+        <div class="col-md-6 text-start">
+            <h2 class="fw-bold mb-1">@ViewData["Title"]</h2>
+            <h5 class="text-muted mb-0">@reportDate</h5>
+        </div>
+
+        <!-- Right Column: Filters and Download Button -->
+        <div class="col-md-6 text-end">
+            <div class="d-inline-flex flex-wrap justify-content-end align-items-end gap-2">
+                @if (ViewBag.EnableDateFilter != null && ViewBag.EnableDateFilter == true)
+                {
+                    var selectedMonth = ViewBag.SelectedMonth as int? ?? DateTime.Now.Month;
+                    var selectedYear = ViewBag.SelectedYear as int? ?? DateTime.Now.Year;
+
+                    <form asp-action="@ViewBag.Action" asp-controller="Report" method="get" class="d-flex gap-2 align-items-end">
+                        <div>
+                            <label for="month" class="form-label mb-1">Month:</label>
+                            <select id="month" name="month" class="form-select">
+                                @for (int m = 1; m <= 12; m++)
+                                {
+                                    <option value="@m" selected="@(m == selectedMonth ? "selected" : null)">
+                                        @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="year" class="form-label mb-1">Year:</label>
+                            <select id="year" name="year" class="form-select">
+                                @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 5; y--)
+                                {
+                                    <option value="@y" selected="@(y == selectedYear ? "selected" : null)">@y</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                        </div>
+                    </form>
+                }
+
+                @if (data != null && data.Any())
+                {
+                    <button class="btn btn-outline-primary btn-sm align-self-end" onclick="generatePDF()">Download PDF Report</button>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (data != null && data.Any())
+    {
+        <div id="report-content" style="font-family: 'Segoe UI', sans-serif;">
+            <table class="table table-bordered table-striped shadow-sm">
+                <thead class="table-dark">
+                    <tr>
+                        @foreach (var col in columns)
+                        {
+                            <th>@col</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in data)
+                    {
+                        <tr>
+                            @foreach (var cell in row)
+                            {
+                                <td>@cell</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (ViewBag.TotalQuantity != null || ViewBag.TotalAmount != null || ViewBag.TotalProfit != null || ViewBag.ItemCount != null)
+            {
+                <div class="mt-4 p-3 rounded bg-light border shadow-sm text-end">
+                    <h5 class="mb-2 fw-semibold text-secondary">Summary</h5>
+
+                    @if (ViewBag.TotalQuantity != null)
+                    {
+                        <div class="text-dark">
+                            <span class="fw-bold">Total Quantity:</span>
+                            <span class="text-success">@ViewBag.TotalQuantity Piece@(ViewBag.TotalQuantity > 1 ? "s" : "")</span>
+                        </div>
+                    }
+
+                    @if (ViewBag.TotalAmount != null)
+                    {
+                        <div class="text-dark">
+                            <span class="fw-bold">Total Amount:</span>
+                            <span class="text-success">₱@String.Format("{0:N2}", ViewBag.TotalAmount)</span>
+                        </div>
+                    }
+
+                    @if (ViewBag.TotalProfit != null)
+                    {
+                        <div class="text-dark">
+                            <span class="fw-bold">Total Profit:</span>
+                            <span class="text-success">₱@String.Format("{0:N2}", ViewBag.TotalProfit)</span>
+                        </div>
+                    }
+
+                    @if (ViewBag.ItemCount != null)
+                    {
+                        <div class="text-dark">
+                            <span class="fw-bold">Total Number of Products:</span>
+                            <span class="badge bg-primary">@ViewBag.ItemCount</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">No records found.</div>
+    }
+</div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    async function generatePDF() {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('landscape', 'mm', 'a4'); // Landscape orientation
+
+        const element = document.getElementById("report-content");
+        const canvas = await html2canvas(element, { scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const margin = 10;
+        const contentWidth = pageWidth - margin * 2;
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
+
+        // Add report title and date
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(16);
+        pdf.text(reportTitle, margin, 15);
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(12);
+        pdf.text(`Report Period: ${reportDate}`, margin, 23);
+
+        // Add chart/table image
+        pdf.addImage(imgData, "PNG", margin, 30, contentWidth, imgHeight);
+
+        // Format timestamp as yyyymmddHHMM
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+
+        // Generate final filename
+        const sanitizedDate = reportDate.replace(/\s+/g, '_');
+        const filename = `${reportTitle}_For_${sanitizedDate}_${timestamp}.pdf`;
+
+        pdf.save(filename);
+    }
+</script>

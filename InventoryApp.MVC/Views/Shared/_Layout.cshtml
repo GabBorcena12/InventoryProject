@@ -1,0 +1,210 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - InventoryApp</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/InventoryApp.styles.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-xxxl navbar-dark navbar-custom shadow-sm" style="min-height: 5rem;">
+            <div class="container-fluid px-4 m-3">
+                <!-- App Name -->
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")" style="font-family: 'Pacifico', cursive; font-size: 1.75rem;">
+                    Anjey's Pet Supplies
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse ms-3" id="navbarNav">
+                    <ul class="navbar-nav me-auto gap-2">
+                        @if (ViewBag.Username != null)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="@Url.Action("Dashboard", "Home")">
+                                    <i class="bi bi-speedometer2 me-1"></i> Overview
+                                </a>
+                            </li>
+
+                            <!-- Stock Management -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold" href="#" id="inventoryDropdown" data-bs-toggle="dropdown">
+                                    <i class="bi bi-box-seam me-1"></i> Stock Management
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark shadow-lg rounded-3 p-2" aria-labelledby="inventoryDropdown">
+                                    <li class="dropdown-header text-light">Stock</li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="PurchaseOrder"><i class="bi bi-bag-plus me-2"></i> Purchase Order</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="Inventory"><i class="bi bi-boxes me-2"></i> Inventory</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="CreateInventory"><i class="bi bi-plus-square me-2"></i> Add Item</a></li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li class="dropdown-header text-light">Sales & Display</li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="DisplayItems"><i class="bi bi-eye me-2"></i> Items on Display</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="Sales"><i class="bi bi-cash-coin me-2"></i> Sales Records</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="OutItems"><i class="bi bi-box-arrow-up-right me-2"></i> Released Items</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="NearExpiryItems"><i class="bi bi-exclamation-triangle me-2"></i> Expiring Stocks</a></li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li class="dropdown-header text-light">Expenses & Suppliers</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Inventory" asp-action="OperatingExpenses">
+                                            <i class="bi bi-credit-card-2-front me-2"></i> Operating Expenses
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li class="dropdown-header text-light">System Logs</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Home" asp-action="ViewAuditLogs">
+                                            <i class="bi bi-journal-text me-2"></i> Audit Logs
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
+
+                            <!-- Setups -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold" href="#" id="setupDropdown" data-bs-toggle="dropdown">
+                                    <i class="bi bi-sliders me-1"></i> Setups
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark shadow-lg rounded-3 p-2" aria-labelledby="setupDropdown">
+                                    <li class="dropdown-header text-light">Suppliers</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Inventory" asp-action="Suppliers">
+                                            <i class="bi bi-truck me-2"></i> View Suppliers
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Inventory" asp-action="CreateSupplier">
+                                            <i class="bi bi-truck-flatbed me-2"></i> Add Supplier
+                                        </a>
+                                    </li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li class="dropdown-header text-light">Products</li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Inventory" asp-action="Products">
+                                            <i class="bi bi-list-ul me-2"></i> View Products
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Inventory" asp-action="CreateProduct">
+                                            <i class="bi bi-plus-square me-2"></i> Add Product
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Label" asp-action="LabelView">
+                                            <i class="bi bi-printer-fill me-2"></i> Print Labels
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
+                            <!-- Reports -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold" href="#" id="reportDropdown" data-bs-toggle="dropdown">
+                                    <i class="bi bi-graph-up-arrow me-1"></i> Reports
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark shadow-lg rounded-3 p-2" aria-labelledby="reportDropdown">
+                                    <li class="dropdown-header text-light">Sales</li>
+                                    <li><a class="dropdown-item" href="@Url.Action("MonthlySalesDetailed", "Report")"><i class="bi bi-receipt me-2"></i> Monthly Sales - Detailed</a></li>
+                                    <li><a class="dropdown-item" href="@Url.Action("MonthlySalesSummary", "Report")"><i class="bi bi-bar-chart-line me-2"></i> Monthly Sales - Summary</a></li>
+                                    <li><a class="dropdown-item" href="@Url.Action("SalesOverview", "Report")"><i class="bi bi-clipboard-data me-2"></i> Sales - Overview</a></li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li class="dropdown-header text-light">Stocks</li>
+                                    <li><a class="dropdown-item" href="@Url.Action("ItemsToOrder", "Report")"><i class="bi bi-cart-check me-2"></i> Restock Recommendations</a></li>
+
+                                    <li><hr class="dropdown-divider" /></li>
+
+                                    <li class="dropdown-header text-light">Expense</li>
+                                    <li><a class="dropdown-item" href="@Url.Action("FinancialSummaryReport", "Report")"><i class="bi bi-cash-stack me-2"></i> Financial Summary</a></li>
+                                </ul>
+                            </li>
+
+                            <!-- Admin Only -->
+                            @if (ViewBag.UserRoles.Contains("Admin"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle fw-semibold" href="#" data-bs-toggle="dropdown">
+                                        <i class="bi bi-person-gear me-1"></i> User Management
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-dark shadow-lg rounded-3 p-2">
+                                        <li><a class="dropdown-item" href="@Url.Action("UnconfirmedAccounts", "Security")"><i class="bi bi-person-check me-2"></i> Confirm Accounts</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("ForceLogout", "Security")"><i class="bi bi-door-open me-2"></i> Force Logout</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("ChangePassword", "Security")"><i class="bi bi-key me-2"></i> Change Password</a></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("AssignRoles", "Security")"><i class="bi bi-shield-lock me-2"></i> Assign Roles</a></li>
+                                    </ul>
+                                </li>
+                            }
+                        }
+                    </ul>
+
+                    <!-- Right Side (Auth) -->
+                    <ul class="navbar-nav ms-auto gap-2">
+                        @if (ViewBag.Username != null)
+                        {
+                            <li class="nav-item d-flex align-items-center text-white">
+                                <span class="nav-link disabled">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    Hi, @(char.ToUpper(ViewBag.Username[0]) + ViewBag.Username.Substring(1).ToLower())
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-warning" href="@Url.Action("Logout", "Account")">
+                                    <i class="bi bi-power me-1"></i> Logout
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link" href="@Url.Action("Login", "Account")"><i class="bi bi-box-arrow-in-right me-1"></i> Login</a></li>
+                            <li class="nav-item"><a class="nav-link" href="@Url.Action("Register", "Account")"><i class="bi bi-person-plus me-1"></i> Register</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Page Content -->
+    <div class="container main-content">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-white text-center py-4 mt-auto" style="background-color:#2A4759;">
+        <div class="container">
+            <p class="mb-1 fw-bold">&copy; 2025 - End-to-End Inventory Management Solution</p>
+            <p class="mb-1">Developed by <strong>GAJI Technologies</strong></p>
+            <p class="mb-1">
+                <a href="mailto:gabrielborcena@gmail.com" class="text-white text-decoration-none">gabrielborcena@gmail.com</a> |
+                <a href="tel:+639053681204" class="text-white text-decoration-none">+63 905 368 1204</a>
+            </p>
+        </div>
+    </footer>
+
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

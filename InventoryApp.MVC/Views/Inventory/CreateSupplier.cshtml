@@ -1,0 +1,69 @@
+﻿@model InventoryApp.Core.Models.Supplier
+
+@{
+    ViewData["Title"] = "Add New Supplier";
+}
+
+<div class="container-fluid m-4">
+    <h2>@ViewData["Title"]</h2>
+
+    @await Html.PartialAsync("_ToastMessages")
+    @await Html.PartialAsync("_ErrorMessage")
+    <form asp-action="CreateSupplier" method="post">
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-4">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" placeholder="e.g., ABC Trading Corp." />
+                <small class="text-muted">Enter the full legal name of the supplier.</small>
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <label asp-for="ContactPerson" class="form-label"></label>
+                <input asp-for="ContactPerson" class="form-control" placeholder="e.g., Juan Dela Cruz" />
+                <small class="text-muted">Main contact person for this supplier.</small>
+                <span asp-validation-for="ContactPerson" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <label asp-for="ContactNumber" class="form-label"></label>
+                <input asp-for="ContactNumber" class="form-control" placeholder="e.g., 09171234567" />
+                <small class="text-muted">Mobile or landline number for communication.</small>
+                <span asp-validation-for="ContactNumber" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <label asp-for="Address" class="form-label"></label>
+                <input asp-for="Address" class="form-control" placeholder="e.g., 123 Main St, City" />
+                <small class="text-muted">Complete address of the supplier.</small>
+                <span asp-validation-for="Address" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <label asp-for="AverageDaysToDeliver" class="form-label"></label>
+                <input asp-for="AverageDaysToDeliver" class="form-control" type="number" min="0" placeholder="e.g., 3" />
+                <small class="text-muted">Estimated delivery lead time in days.</small>
+                <span asp-validation-for="AverageDaysToDeliver" class="text-danger"></span>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <label asp-for="Notes" class="form-label"></label>
+                <textarea asp-for="Notes" class="form-control" placeholder="Optional remarks or terms..."></textarea>
+                <small class="text-muted">Additional info such as payment terms or availability.</small>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="submit" class="btn btn-success">Add to Supplier</button>
+            <a asp-action="Suppliers" class="btn btn-secondary ms-2">Back to List</a>
+        </div>
+    </form>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

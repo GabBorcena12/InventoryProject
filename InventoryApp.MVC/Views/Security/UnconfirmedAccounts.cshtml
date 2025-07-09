@@ -1,0 +1,36 @@
+﻿@model List<InventoryApp.Core.Models.ApplicationUser>
+@{
+    ViewData["Title"] = "Unconfirmed Accounts";
+}
+
+<h2 class="my-4">Unconfirmed Accounts</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">All accounts are confirmed.</div>
+}
+else
+{
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>
+                        <form asp-action="ConfirmAccount" method="post">
+                            <input type="hidden" name="id" value="@user.Id" />
+                            <button class="btn btn-success btn-sm">Confirm Email</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,114 @@
+﻿@model List<InventoryApp.Core.Models.Inventory>
+@{
+    ViewData["Title"] = "Expiring Stocks";
+}
+
+<div class="container mt-4">
+    <h2>Expiring Stocks</h2><p class="text-muted mb-3">
+        Shows a list of inventory items that are within 90 days of their expiration date to help prioritize clearance or disposal.
+    </p>
+
+    @await Html.PartialAsync("_ToastMessages")
+    @await Html.PartialAsync("_ErrorMessage")
+
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-bordered table-striped table-responsive">
+            <thead class="table-dark">
+                <tr>
+                    <th>Batch No</th>
+                    <th>Product Name</th>
+                    <th>Order Qty</th>
+                    <th>Stock Qty</th>
+                    <th>Cost Per Unit</th>
+                    <th>Price Per Unit</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.BatchNo</td>
+                        <td>@item.product?.ProductName</td>
+                        <td>
+                            @{
+                                var unit = item.product?.UnitOfMeasure.ToString();
+                                var qty = item.InitialQuantity;
+                                var pluralSuffix = (qty > 1 && unit != null && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
+                            }
+
+                            @item.InitialQuantity @unit@pluralSuffix
+                        </td>
+                        <td>
+                            @{
+                                unit = item.product?.UnitOfMeasure.ToString();
+                                qty = item.CurrentQty;
+                                pluralSuffix = (qty > 1 && unit != null && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
+                            }
+
+                            @item.CurrentQty @unit@pluralSuffix
+                        </td>
+                        <td>@item.CostPerUnit.ToString("N2")</td>
+                        <td>@item.ExpiryDate.ToString()</td>
+                        <td>
+                            @{
+                                var status = "";
+                                var cssClass = "";
+
+                                if (item.CurrentQty == 0)
+                                {
+                                    status = "Out of Stock";
+                                    cssClass = "text-danger"; // red
+                                }
+                                else if (item.CurrentQty <= item.product?.RestockThreshold)
+                                {
+                                    status = "Low Stock";
+                                    cssClass = "text-warning"; // orange
+                                }
+                                else
+                                {
+                                    status = "In Stock";
+                                    cssClass = "text-success"; // green
+                                }
+                            }
+
+                            <span class="@cssClass">@status</span>
+                        </td>
+                        <td>
+                            <a asp-action="ViewInventory" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">View Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-end fw-bold">Sub total</td>
+                    <td class="fw-bold">@Model.Sum(item => item.CostPerUnit).ToString("N2")</td>
+                    <td class="fw-bold">@Model.Sum(item => item.PricePerUnit).ToString("N2")</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+
+        </table>
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-4">
+                    @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
+                    {
+                        var active = (i == (int)ViewBag.CurrentPage) ? "active" : "";
+                        <li class="page-item @active">
+                            <a class="page-link" asp-action="NearExpiryItems" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">No records found.</div>
+    }
+</div>

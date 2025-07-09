@@ -1,0 +1,114 @@
+﻿# this yaml file is being use for local kubernetes or kind deployment
+# 1. Secret for SQL Server password (base64 for your password)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mssql-secret
+type: Opaque
+data:
+  SA_PASSWORD: WW91clN0cm9uZ0BQYXNzdzByZA==
+---
+# 1.5 PersistentVolumeClaim for MSSQL data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mssql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# 2. SQL Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql
+  template:
+    metadata:
+      labels:
+        app: mssql
+    spec:
+      containers:
+        - name: mssql
+          image: mcr.microsoft.com/mssql/server:2022-latest
+          ports:
+            - containerPort: 1433
+          env:
+            - name: ACCEPT_EULA
+              value: "Y"
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mssql-secret
+                  key: SA_PASSWORD
+          volumeMounts:
+            - name: mssql-data
+              mountPath: /var/opt/mssql
+      volumes:
+        - name: mssql-data
+          persistentVolumeClaim:
+            claimName: mssql-pvc
+---
+# 3. SQL Server Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql
+spec:
+  selector:
+    app: mssql
+  ports:
+    - name: sql
+      port: 1433
+      targetPort: 1433
+---
+# 4. InventoryApp Deployment using GHCR image
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventoryapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventoryapp
+  template:
+    metadata:
+      labels:
+        app: inventoryapp
+    spec:
+      initContainers:
+        - name: wait-for-mssql
+          image: curlimages/curl:8.8.0
+          command: ['sh', '-c', 'until nc -z mssql 1433; do echo waiting for mssql; sleep 2; done; echo MSSQL is up!']
+      containers:
+        - name: inventoryapp
+          image: ghcr.io/gabborcena12/inventoryapp:latest  # ✅ GHCR image
+          ports:
+            - containerPort: 80
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: "Server=mssql,1433;Database=InventoryAppDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;"
+            - name: ASPNETCORE_URLS
+              value: "http://+:80"
+---
+# 5. InventoryApp Service exposed via LoadBalancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventoryapp
+spec:
+  type: LoadBalancer
+  selector:
+    app: inventoryapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

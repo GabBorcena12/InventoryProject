@@ -1,0 +1,14 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div class="container mt-5">
+    <div class="jumbotron text-center">
+        <h1 class="display-4">Welcome @ViewBag.Username to Inventory Management System</h1>
+        <p class="lead">Manage your Inventorys, categories, and stock with ease.</p>
+        <hr class="my-4" />
+        <p>Use the navigation above to access inventory, reports, and settings.</p>
+        <a class="btn btn-primary btn-lg" href="@Url.Action("Dashboard", "Home")" role="button">Go to Dashboard</a>
+    </div>
+</div>

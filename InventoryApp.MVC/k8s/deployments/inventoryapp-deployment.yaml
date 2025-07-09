@@ -1,0 +1,35 @@
+﻿# this yaml file is being use for GKE deployment
+# inventoryapp-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventoryapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventoryapp
+  template:
+    metadata:
+      labels:
+        app: inventoryapp
+    spec:
+      containers:
+        - name: inventoryapp
+          image: ghcr.io/gabborcena12/inventoryapp:latest
+          ports:
+            - containerPort: 80
+      imagePullSecrets:
+        - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventoryapp-service
+spec:
+  selector:
+    app: inventoryapp
+  ports:
+    - port: 80
+      targetPort: 80
+  type: LoadBalancer

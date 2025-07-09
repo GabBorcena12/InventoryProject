@@ -1,0 +1,21 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventoryapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventoryapp
+  template:
+    metadata:
+      labels:
+        app: inventoryapp
+    spec:
+      containers:
+      - name: inventoryapp
+        image: ghcr.io/gabborcena12/inventoryapp-mvc:__IMAGE_TAG__
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: ghcr-secret

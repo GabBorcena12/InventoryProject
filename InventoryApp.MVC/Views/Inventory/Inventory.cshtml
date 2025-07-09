@@ -1,0 +1,198 @@
+﻿@model List<InventoryApp.Core.Models.Inventory>
+@{
+    ViewData["Title"] = "Inventory List";
+    var currentSortColumn = ViewBag.SortColumn as string ?? "ProductName";
+    var currentSortOrder = ViewBag.SortOrder as string ?? "asc";
+    var productNameFilter = ViewBag.ProductName as string ?? "";
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
+
+    string GetSortUrl(string column)
+    {
+        var newOrder = currentSortColumn == column && currentSortOrder == "asc" ? "desc" : "asc";
+        return Url.Action("Inventory", new
+        {
+            productName = productNameFilter,
+            sortColumn = column,
+            sortOrder = newOrder,
+            page = currentPage
+        }) ?? "";
+    }
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <h2>Inventory List</h2>
+        <a asp-action="CreateInventory" class="btn btn-success">Add Inventory</a>
+    </div>
+    <p class="text-muted mb-3">
+        Provides an overview of all products and repackaged items in stock, including quantities, unit costs, and supplier information.
+    </p>
+    <!-- Filter Form -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" name="productName" class="form-control" placeholder="Filter by Product Name"
+                   value="@ViewBag.ProductName" />
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="startDate" class="form-control" value="@ViewBag.StartDate" />
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="endDate" class="form-control" value="@ViewBag.EndDate" />
+        </div>
+        <div class="col-md-auto">
+            <button type="submit" class="btn btn-success">Filter</button>
+            <a asp-action="Inventory" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    @await Html.PartialAsync("_ToastMessages")
+    @await Html.PartialAsync("_ErrorMessage")
+
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-bordered table-striped table-responsive">
+            <thead class="table-dark">
+                <tr>
+                    <th><a href="@GetSortUrl("BatchNo")" class="text-white text-decoration-none">Batch No</a></th>
+                    <th><a href="@GetSortUrl("ProductName")" class="text-white text-decoration-none">Product Name</a></th>
+                    <th>Order Qty</th>
+                    <th>Stock Qty</th>
+                    <th>Cost Per Unit</th>
+                    <th>Price Per Unit</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.BatchNo</td>
+                        <td>@item.product?.ProductName</td>
+                        <td>
+                            @{
+                                var unit = item.product?.UnitOfMeasure.ToString();
+                                var qty = item.InitialQuantity;
+                                var pluralSuffix = (qty > 1 && unit != null && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
+                            }
+                            @item.InitialQuantity @unit@pluralSuffix
+                        </td>
+                        <td>
+                            @{
+                                unit = item.product?.UnitOfMeasure.ToString();
+                                qty = item.CurrentQty;
+                                pluralSuffix = (qty > 1 && unit != null && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
+                            }
+                            @item.CurrentQty @unit@pluralSuffix
+                        </td>
+                        <td>@item.CostPerUnit.ToString("N2")</td>
+                        <td>@item.PricePerUnit.ToString("N2")</td>
+                        <td>
+                            @{
+                                var status = "";
+                                var cssClass = "";
+                                if (item.CurrentQty == 0)
+                                {
+                                    status = "Out of Stock";
+                                    cssClass = "text-danger";
+                                }
+                                else if (item.CurrentQty <= item.product?.RestockThreshold)
+                                {
+                                    status = "Low Stock";
+                                    cssClass = "text-warning";
+                                }
+                                else
+                                {
+                                    status = "In Stock";
+                                    cssClass = "text-success";
+                                }
+                            }
+                            <span class="@cssClass">@status</span>
+                        </td>
+                        <td>
+                            <a asp-action="ViewInventory" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">View Details</a>
+                            <a asp-action="Repack" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-1">Prepare Item</a>
+                            @if (item.repackItems == null || !item.repackItems.Any())
+                            {
+                                <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                        data-id="@item.Id"
+                                        data-name="@item.product?.ProductName">
+                                    Delete
+                                </button>
+                            }
+                        </td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <nav>
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    var isActive = i == currentPage;
+                    var linkClass = isActive
+                    ? "bg-success text-white border-success"
+                    : "bg-white text-success border-success";
+
+                    <li class="page-item @(isActive ? "active" : "")">
+                        <a class="page-link @linkClass"
+                           href="@Url.Action("Inventory", new { productName = productNameFilter, sortColumn = currentSortColumn, sortOrder = currentSortOrder, page = i })">
+                            @i
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">No records found.</div>
+    }
+</div>
+
+<!-- Hidden delete form -->
+<form id="deleteForm" method="post" asp-action="DeleteInventoryConfirmed">
+    <input type="hidden" name="id" id="deleteId" />
+</form>
+
+<!-- Confirmation Toast -->
+<div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1080;">
+    <div id="confirmToast" class="toast bg-warning text-dark" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-body m-1">
+            Are you sure you want to delete <strong id="toastItemName"></strong>?
+        </div>
+        <div class="d-flex justify-content-center mt-2 mb-2">
+            <button type="button" class="btn btn-sm btn-danger me-2" id="confirmDeleteBtn">Yes</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="toast">Cancel</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let deleteId = 0;
+
+        $(document).ready(function () {
+            $('.delete-btn').click(function () {
+                deleteId = $(this).data('id');
+                const name = $(this).data('name');
+                $('#toastItemName').text(name);
+
+                const toastEl = new bootstrap.Toast(document.getElementById('confirmToast'));
+                toastEl.show();
+            });
+
+            $('#confirmDeleteBtn').click(function () {
+                $('#deleteId').val(deleteId);
+                $('#deleteForm').submit();
+            });
+        });
+    </script>
+}

@@ -1,0 +1,139 @@
+﻿html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.navbar-nav .nav-link {
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #ffc107 !important;
+}
+
+/*Customize css for web app*/
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+}
+
+.dropdown-menu .dropdown-item:hover {
+    background-color: #495057;
+    color: #f8f9fa;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.dropdown-header {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.navbar-brand {
+    font-size: 1.4rem;
+}
+
+.btn-primary {
+    background-color: #d15176 !important;
+    border: #d15176 !important;
+}
+
+.btn-success {
+    background-color: #e4ae00 !important;
+    border: #e4ae00 !important;
+}
+
+.btn-info {
+    background-color: #FF7F50 !important;
+    border: #FF7F50 !important;
+}
+
+.btn-warning {
+    background-color: #F88379 !important;
+    border: #F88379 !important;
+}
+
+.btn-danger {
+    background-color: #DE3163 !important;
+    border: #DE3163 !important;
+}
+
+.page-link {
+    background-color: #AA336A !important;
+    border: #AA336A !important;
+}
+
+.page-item a.page-link {
+    color: white !important;
+}
+
+.page-item.active a.page-link {
+    color: black !important;
+}
+
+.bg-success {
+    background-color: #d15176 !important;
+    border: #d15176 !important;
+}
+
+/* Custom Navbar Color */
+.navbar-custom {
+    background-color: #d15176 !important;
+}
+
+    .navbar-custom .navbar-nav .nav-link,
+    .navbar-custom .navbar-brand,
+    .navbar-custom .dropdown-toggle,
+    .navbar-custom .dropdown-menu .dropdown-item,
+    .navbar-custom .navbar-toggler-icon {
+        color: white !important;
+    }
+
+    .navbar-custom .dropdown-menu {
+        background-color: #700d2a;
+    }
+
+    .navbar-custom .dropdown-item:hover {
+        background-color: #d15176;
+        color: #ffffff;
+    }
+
+/*@media (max-width: 1468px) {
+    .navbar-expand-xl .navbar-collapse {
+        display: none !important;
+    }
+
+    .navbar-expand-xl .navbar-toggler {
+        display: block !important;
+    }
+
+    .navbar-expand-xl.collapsed .navbar-collapse {
+        display: block !important;
+    }
+}
+*/

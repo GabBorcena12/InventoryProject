@@ -1,0 +1,12 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  name: inventoryapi-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: inventoryapi
+  ports:
+    - protocol: TCP
+      port: 80          # External port exposed by LoadBalancer
+      targetPort: 8080  # Internal container port your app listens on

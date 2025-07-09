@@ -1,0 +1,101 @@
+﻿@model InventoryApp.Core.Models.Inventory
+@{
+    ViewData["Title"] = "Add Inventory";
+}
+
+<div class="container-fluid m-4">
+    <h2>@ViewData["Title"]</h2>
+
+    @await Html.PartialAsync("_ToastMessages")
+    @await Html.PartialAsync("_ErrorMessage")
+    <form asp-action="CreateInventory" method="post" class="row g-3">
+
+        <!-- Batch Number (Read-only) -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="BatchNo"></label>
+            <input asp-for="BatchNo" class="form-control" value="@ViewBag.BatchNo" readonly />
+            <small class="form-text text-muted">Automatically generated batch number.</small>
+            <span asp-validation-for="BatchNo" class="text-danger"></span>
+        </div>
+
+        <!-- SKU -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="SKU"></label>
+            <input asp-for="SKU" class="form-control" placeholder="Optional SKU code" />
+            <small class="form-text text-muted">Enter a stock keeping unit (SKU) if available; leave blank if not applicable.</small>
+            <span asp-validation-for="SKU" class="text-danger"></span>
+        </div>
+
+        <!-- Product -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="ProductId"></label>
+            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-control">
+                <option value="">-- Select Product --</option>
+            </select>
+            <small class="form-text text-muted">Select the product being added to inventory.</small>
+            <span asp-validation-for="ProductId" class="text-danger"></span>
+        </div>
+
+        <!-- Order Quantity -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label>Order Quantity</label>
+            <input asp-for="InitialQuantity" class="form-control" placeholder="Per gram or piece" />
+            <small class="form-text text-muted">
+                For volume-based products, enter the total weight in grams (e.g., 2 sacks of 20kg = 40000 grams).
+                For unit-based items, enter the total item count.
+            </small>
+            <span asp-validation-for="InitialQuantity" class="text-danger"></span>
+        </div>
+
+        <!-- Cost Per Unit -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="CostPerUnit"></label>
+            <input asp-for="CostPerUnit" class="form-control" placeholder="0" />
+            <small class="form-text text-muted">
+                Enter the purchase price per sack (volume-based) or per piece (unit-based).
+            </small>
+            <span asp-validation-for="CostPerUnit" class="text-danger"></span>
+        </div>
+
+        <!-- Price Per Unit -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="PricePerUnit"></label>
+            <input asp-for="PricePerUnit" class="form-control" placeholder="0" />
+            <small class="form-text text-muted">
+                Set the selling price per full sack or per piece, depending on product type.
+            </small>
+            <span asp-validation-for="PricePerUnit" class="text-danger"></span>
+        </div>
+
+        <!-- Supplier -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="SupplierId"></label>
+            <select asp-for="SupplierId" asp-items="ViewBag.Suppliers" class="form-control"></select>
+            <small class="form-text text-muted">Select the supplier from whom the inventory was ordered.</small>
+            <span asp-validation-for="SupplierId" class="text-danger"></span>
+        </div>
+
+        <!-- Expiry Date -->
+        <div class="form-group col-12 col-md-6 col-lg-4">
+            <label asp-for="ExpiryDate"></label>
+            <input asp-for="ExpiryDate" type="date" class="form-control" />
+            <small class="form-text text-muted">
+                Make sure to input the correct expiry date to track the nearly expiring items.
+            </small>
+            <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+        </div>
+
+        <!-- Submit -->
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-primary px-5">Add to Inventory</button>
+            <a asp-action="Inventory" class="btn btn-secondary ms-2">Back to List</a>
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

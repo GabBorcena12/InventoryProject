@@ -1,0 +1,82 @@
+﻿@model LabelPrintViewModel
+
+<h2 class="mb-4">Print Product Labels</h2>
+
+<form asp-action="LabelView" method="post">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="ProductId" class="form-label"></label>
+            <select asp-for="ProductId" asp-items="Model.Products" class="form-control">
+                <option value="">-- Select Product --</option>
+            </select>
+
+            <span asp-validation-for="ProductId" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="PackagingType" class="form-label"></label>
+            <select asp-for="PackagingType" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="Grams">Grams</option>
+                <option value="Piece">Piece</option>
+            </select>
+            <span asp-validation-for="PackagingType" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Order Quantity</label>
+            <input asp-for="WeightOrPieces" class="form-control" />
+            <span asp-validation-for="WeightOrPieces" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="SellingPrice" class="form-label"></label>
+            <input asp-for="SellingPrice" class="form-control" />
+            <span asp-validation-for="SellingPrice" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="BatchNumber" class="form-label"></label>
+            <select asp-for="BatchNumber" class="form-control" id="batchDropdown">
+                <option value="">-- Select Batch --</option>
+            </select>
+            <span asp-validation-for="BatchNumber" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="NumberOfLabels" class="form-label"></label>
+            <input asp-for="NumberOfLabels" class="form-control" value="1" />
+            <span asp-validation-for="NumberOfLabels" class="text-danger"></span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Print Labels
+    </button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            $('#ProductId').on('change', function () {
+                const productId = $(this).val();
+                const $batchDropdown = $('#batchDropdown');
+
+                $batchDropdown.empty().append('<option value="">Loading...</option>');
+
+                if (productId) {
+                    $.getJSON('/Label/GetBatches', { productId }, function (data) {
+                        $batchDropdown.empty().append('<option value="">-- Select Batch --</option>');
+                        $.each(data, function (i, batch) {
+                            $batchDropdown.append(`<option value="${batch}">${batch}</option>`);
+                        });
+                    });
+                } else {
+                    $batchDropdown.empty().append('<option value="">-- Select Batch --</option>');
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,73 @@
+﻿@model InventoryApp.Core.Models.RepackItem
+
+@{
+    ViewData["Title"] = "Edit Repack Item";
+}
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h4 class="mb-4">@ViewData["Title"]</h4>
+
+            @await Html.PartialAsync("_ToastMessages")
+            @await Html.PartialAsync("_ErrorMessage")
+
+            <form asp-action="EditRepack" method="post">
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="InventoryId" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Variant Code</label>
+                    <input value="@Model.VariantCode" class="form-control" readonly />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="ProductName" class="form-label fw-bold"></label>
+                        <input asp-for="ProductName" readonly class="form-control" />
+                        <span asp-validation-for="ProductName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="PricePerUnit" class="form-label fw-bold"></label>
+                        <input asp-for="PricePerUnit" class="form-control" />
+                        <span asp-validation-for="PricePerUnit" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Discount" class="form-label fw-bold"></label>
+                        <input asp-for="Discount" class="form-control" />
+                        <span asp-validation-for="Discount" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="InitialQty" class="form-label fw-bold"></label>
+                        <input asp-for="InitialQty" class="form-control"/>
+                        <span asp-validation-for="InitialQty" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="QuantityValue" class="form-label fw-bold"></label>
+                        <input asp-for="QuantityValue" class="form-control" placeholder="Per gram or piece" />
+                        <span asp-validation-for="QuantityValue" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary me-2">
+                        Update
+                    </button>
+                    <a asp-action="Repack" asp-route-id="@Model.InventoryId" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

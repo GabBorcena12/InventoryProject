@@ -1,0 +1,108 @@
+name: ☁️ CI/CD to GKE with GHCR
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GHCR_REGISTRY: ghcr.io/gabborcena12
+
+jobs:
+  deploy-to-gke:
+    runs-on: self-hosted
+
+    steps:
+      - name: 🧾 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🆔 Set Docker image tag
+        shell: powershell
+        run: |
+          $sha = "${{ github.sha }}".Substring(0, 7)
+          "IMAGE_TAG=$sha" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: 🔐 Login to GHCR
+        shell: cmd
+        run: echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+      - name: 🐳 Build & Push InventoryApp.MVC image
+        shell: powershell
+        run: |
+          docker build --no-cache -t "$env:GHCR_REGISTRY/inventoryapp-mvc:$env:IMAGE_TAG" -f InventoryApp.MVC/Dockerfile .
+          docker tag "$env:GHCR_REGISTRY/inventoryapp-mvc:$env:IMAGE_TAG" "$env:GHCR_REGISTRY/inventoryapp-mvc:latest"
+          docker push "$env:GHCR_REGISTRY/inventoryapp-mvc:$env:IMAGE_TAG"
+          docker push "$env:GHCR_REGISTRY/inventoryapp-mvc:latest"
+
+      - name: 🐳 Build & Push InventoryApi image
+        shell: powershell
+        run: |
+          docker build --no-cache -t "$env:GHCR_REGISTRY/inventoryapi:$env:IMAGE_TAG" -f Inventory.Api/Dockerfile .
+          docker tag "$env:GHCR_REGISTRY/inventoryapi:$env:IMAGE_TAG" "$env:GHCR_REGISTRY/inventoryapi:latest"
+          docker push "$env:GHCR_REGISTRY/inventoryapi:$env:IMAGE_TAG"
+          docker push "$env:GHCR_REGISTRY/inventoryapi:latest"
+
+
+      - name: 🔐 Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: ☁️ Set up GKE credentials
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ secrets.GKE_REGION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: 🛡️ Create image pull secret in GKE (ghcr-secret)
+        shell: powershell
+        run: |
+          kubectl delete secret ghcr-secret --ignore-not-found
+          kubectl create secret docker-registry ghcr-secret `
+            --docker-server=https://ghcr.io `
+            --docker-username=${{ secrets.GHCR_USERNAME }} `
+            --docker-password=${{ secrets.GHCR_PAT }} `
+            --docker-email=gabrielborcena12@gmail.com
+
+      - name: 🔧 Update image tags in GKE manifests
+        shell: powershell
+        run: |
+          (Get-Content k8s/deployments/inventoryapp-deployment.yaml) `
+            -replace "ghcr\.io/gabborcena12/inventoryapp-mvc:__IMAGE_TAG__", "$env:GHCR_REGISTRY/inventoryapp-mvc:$env:IMAGE_TAG" `
+          | Set-Content k8s/deployments/inventoryapp-deployment.yaml
+
+          (Get-Content k8s/deployments/inventoryapi-deployment.yaml) `
+            -replace "ghcr\.io/gabborcena12/inventoryapi:__IMAGE_TAG__", "$env:GHCR_REGISTRY/inventoryapi:$env:IMAGE_TAG" `
+          | Set-Content k8s/deployments/inventoryapi-deployment.yaml
+
+      - name: 🔐 Apply MSSQL secret
+        shell: powershell
+        run: kubectl apply -f k8s/secrets/mssql-secret.yaml
+
+      - name: 🗄️ Create MSSQL PersistentVolumeClaim
+        shell: powershell
+        run: kubectl apply -f k8s/persistentvolumeclaims/mssql-pvc.yaml
+
+
+      - name: 📦 Deploy updated manifests
+        shell: powershell
+        run: |
+          kubectl apply -f k8s/deployments/mssql-deployment.yaml
+          kubectl apply -f k8s/services/mssql-service.yaml
+          kubectl apply -f k8s/deployments/inventoryapp-deployment.yaml
+          kubectl apply -f k8s/services/inventoryapp-service.yaml
+          kubectl apply -f k8s/deployments/inventoryapi-deployment.yaml
+          kubectl apply -f k8s/services/inventoryapi-service.yaml
+
+      - name: 🔁 Restart deployments
+        shell: powershell
+        run: |
+          kubectl rollout restart deployment/inventoryapp
+          kubectl rollout restart deployment/inventoryapi
+
+      - name: ✅ Confirm rollout status
+        shell: powershell
+        run: |
+          kubectl rollout status deployment/inventoryapp
+          kubectl rollout status deployment/inventoryapi

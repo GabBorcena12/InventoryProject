@@ -1,0 +1,55 @@
+﻿@model InventoryApp.Core.Models.Product
+
+<div class="container-fluid m-4">
+    <h2>Add Product</h2>
+
+    @await Html.PartialAsync("_ToastMessages")
+    @await Html.PartialAsync("_ErrorMessage")
+    <form asp-action="CreateProduct" method="post">
+        <div class="form-group">
+            <label asp-for="ProductName" class="control-label"></label>
+            <input asp-for="ProductName" class="form-control" placeholder="Enter product name" />
+            <small class="form-text text-muted">
+                Enter the official name of the product as it appears in your inventory or packaging.
+            </small>
+            <span asp-validation-for="ProductName" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Volume" class="control-label"></label>
+            <input asp-for="Volume" class="form-control" placeholder="Per gram or piece" />
+            <small class="form-text text-muted">
+                Specify the item quantity in grams or pieces.<br />
+                <strong>Example:</strong> For <em>Cuties Catz</em> (25kg per sack), enter <code>25000</code>.
+                For items sold individually like <em>VetCore</em>, enter <code>1</code> per piece.
+            </small>
+            <span asp-validation-for="Volume" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="UnitOfMeasure" class="control-label"></label>
+            @Html.DropDownListFor(model => model.UnitOfMeasure, (SelectList)ViewBag.UnitOfMeasureList, "-- Select Unit --", new { @class = "form-control" })
+            <small class="form-text text-muted">
+                Select the unit that best represents how the product is measured or sold (e.g., pieces, kilograms, liters).
+            </small>
+            <span asp-validation-for="UnitOfMeasure" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="RestockThreshold" class="control-label"></label>
+            <input asp-for="RestockThreshold" class="form-control" placeholder="Per gram or piece" />
+            <small class="form-text text-muted">
+                Specify the minimum stock level at which the system should prompt for restocking.
+            </small>
+            <small class="form-text text-muted">
+                For example, if measured by weight, enter the equivalent quantity (e.g., 25,000 grams = 1 sack). If measured by packaging, specify the unit count (e.g., 48 pieces = 1 pack).
+            </small>
+            <span asp-validation-for="RestockThreshold" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-success">Add to Product</button>
+            <a asp-action="Products" class="btn btn-secondary ms-2">Back to List</a>
+        </div>
+    </form>
+</div>

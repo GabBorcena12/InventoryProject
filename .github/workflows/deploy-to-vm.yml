@@ -1,0 +1,95 @@
+name: 🚀 Deploy Docker Containers to GCP VM
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GHCR_REGISTRY: ghcr.io/gabborcena12
+
+jobs:
+  deploy-to-vm:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧾 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔐 Login to GHCR
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
+
+    - name: 🆔 Set Docker image tag
+      run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+    - name: 🐳 Build and push InventoryApp.MVC image
+      run: |
+        docker build -t $GHCR_REGISTRY/inventoryapp-mvc:$IMAGE_TAG -t $GHCR_REGISTRY/inventoryapp-mvc:latest \
+          -f InventoryApp.MVC/Dockerfile .
+        docker push $GHCR_REGISTRY/inventoryapp-mvc:$IMAGE_TAG
+        docker push $GHCR_REGISTRY/inventoryapp-mvc:latest
+
+
+    - name: 🐳 Build and push InventoryApi image
+      run: |
+        docker build -t $GHCR_REGISTRY/inventoryapi:$IMAGE_TAG -t $GHCR_REGISTRY/inventoryapi:latest \
+          -f Inventory.Api/Dockerfile .
+        docker push $GHCR_REGISTRY/inventoryapi:$IMAGE_TAG
+        docker push $GHCR_REGISTRY/inventoryapi:latest
+
+
+    - name: 📤 Deploy to GCP VM via SSH
+      run: |
+        echo "${{ secrets.GCP_SSH_KEY }}" > key.pem
+        chmod 600 key.pem
+
+        cat <<EOF > deploy.sh
+        #!/bin/bash
+        set -e
+
+        echo "🔐 Logging in to GHCR..."
+        echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u '${{ secrets.GHCR_USERNAME }}' --password-stdin
+
+        echo "📥 Pulling new images..."
+        docker pull $GHCR_REGISTRY/inventoryapp-mvc:latest
+        docker pull $GHCR_REGISTRY/inventoryapi:latest
+
+        echo "🔁 Creating Docker network..."
+        docker network create inventory-net || true
+
+        echo "🛑 Stopping old containers..."
+        docker stop inventoryapp-mvc inventoryapi mssql || true
+        docker rm inventoryapp-mvc inventoryapi mssql || true
+
+        echo "🛑 Stopping old containers..."
+        docker stop inventoryapp-mvc inventoryapi mssql || true
+        docker rm inventoryapp-mvc inventoryapi mssql || true
+
+        echo "📦 Starting MSSQL..."
+        docker run -d --name mssql --network inventory-net \
+          --user root \
+          -e "ACCEPT_EULA=Y" \
+          -e "SA_PASSWORD=YourStrong@Passw0rd" \
+          -v mssql_data:/var/opt/mssql \
+          -v /home/$USER/sql_backups:/var/opt/mssql/backup \
+          -p 1433:1433 \
+          mcr.microsoft.com/mssql/server:2022-latest
+
+        echo "🚀 Starting new containers..."
+        docker run -d --name inventoryapi --network inventory-net \
+          -e "ConnectionStrings__Default=Server=mssql,1433;Database=InventoryDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;" \
+          -p 5000:5000 $GHCR_REGISTRY/inventoryapi:latest || rollback
+
+        docker run -d --name inventoryapp-mvc --network inventory-net \
+          -e "ConnectionStrings__Default=Server=mssql,1433;Database=InventoryDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;" \
+          -p 8080:80 $GHCR_REGISTRY/inventoryapp-mvc:latest || rollback
+
+        echo "🧹 Cleaning up old/untagged Docker images..."
+        docker image prune -af --filter "until=24h" || true
+
+        echo "✅ Deployment complete."
+
+        EOF
+
+        scp -i key.pem -o StrictHostKeyChecking=no deploy.sh ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_HOST }}:~/deploy.sh
+        ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.GCP_VM_USER }}@${{ secrets.GCP_VM_HOST }} "bash ~/deploy.sh"

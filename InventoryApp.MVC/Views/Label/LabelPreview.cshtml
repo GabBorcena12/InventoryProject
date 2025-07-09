@@ -1,0 +1,113 @@
+﻿@using InventoryApp.Models
+@model LabelPrintViewModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Label Preview</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .label-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0; /* 🟢 Removed space between labels */
+        }
+
+        .label {
+            border: 1px solid #333;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 140px;
+            gap: 10px;
+        }
+
+        .label-left {
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .product-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .details {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-top: 6px;
+        }
+
+        .label img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border: 1px solid #999;
+            padding: 4px;
+            background: #fff;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @@media print {
+            .label {
+                page-break-inside: avoid;
+            }
+
+            body {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="label-grid">
+        @for (int i = 0; i < Model.NumberOfLabels; i++)
+        {
+            <div class="label">
+                <div class="label-left">
+                    <div class="product-name">@Model.ProductName</div>
+                    <div class="details">
+                        @if (Model.PackagingType == "Grams")
+                        {
+                            @($"{Model.WeightOrPieces} grams")
+                        }
+                        else
+                        {
+                            @Model.WeightOrPieces
+                        }
+                    </div>
+                    <div class="price">₱@Model.SellingPrice.ToString("N2")</div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.QrCodeImageBase64))
+                {
+                    <img src="@Model.QrCodeImageBase64" alt="QR Code" />
+                }
+            </div>
+        }
+    </div>
+
+    <script>
+        window.onload = function () {
+            window.print();
+        };
+    </script>
+</body>
+</html>
