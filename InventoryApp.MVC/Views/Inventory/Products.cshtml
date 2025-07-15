@@ -1,6 +1,8 @@
 ﻿@model List<InventoryApp.Core.Models.Product>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
-
+@{
+    ViewData["Title"] = "Product List";
+}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-1">
         <h2>Product List</h2>

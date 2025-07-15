@@ -696,6 +696,8 @@ public class InventoryController : BaseController
         {
             supplier.CreatedBy = ViewBag.Username ?? "System";
             _context.Suppliers.Add(supplier);
+
+            LogAudit("Create", "Supplier", supplier.Id.ToString(), $"Created product '{supplier.Name}'");
             _context.SaveChanges();
             return RedirectToAction(nameof(Suppliers));
         }
