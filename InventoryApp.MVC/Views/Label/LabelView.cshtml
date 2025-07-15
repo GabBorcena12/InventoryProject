@@ -5,48 +5,64 @@
 
 <div class="container mt-4">
     <h2 class="mb-4">Label Generator</h2>
+
     <div class="row">
+
+        <!-- Step 1: Select Batch -->
         <div class="col-md-6 mb-3">
-            <label asp-for="ProductId" class="form-label"></label>
-            <select asp-for="ProductId" asp-items="Model.Products" class="form-control" id="ProductId">
-                <option value="">-- Select Product --</option>
+            <label asp-for="BatchNumber" class="form-label">Batch Number</label>
+            <select asp-for="BatchNumber" class="form-control" id="batchDropdown">
+                <option value="">-- Select Batch --</option>
             </select>
-            <span asp-validation-for="ProductId" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Select the batch for which you want to print labels. Only active batches with inventory are shown.
+            </small>
+            <span asp-validation-for="BatchNumber" class="text-danger"></span>
+        </div>
+
+        <!-- Step 2: Auto-filled fields -->
+        <div class="col-md-6 mb-3">
+            <label asp-for="ProductName" class="form-label">Product</label>
+            <input asp-for="ProductName" class="form-control" id="ProductName" readonly />
+            <input asp-for="ProductId" type="hidden" id="ProductId" />
+            <small class="form-text text-muted">
+                Product is automatically filled based on the selected batch.
+            </small>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="PackagingType" class="form-label"></label>
-            <select asp-for="PackagingType" class="form-control" id="PackagingType">
-                <option value="">-- Select --</option>
-                <option value="Grams">Grams</option>
-                <option value="Piece">Piece</option>
-            </select>
-            <span asp-validation-for="PackagingType" class="text-danger"></span>
+            <label asp-for="PackagingType" class="form-label">Packaging Type</label>
+            <input asp-for="PackagingType" class="form-control" id="PackagingType" readonly />
+            <small class="form-text text-muted">
+                Indicates whether the product is packed by weight (grams) or by piece.
+            </small>
         </div>
 
+        <!-- Step 3: User Inputs -->
         <div class="col-md-6 mb-3">
-            <label class="form-label">Order Quantity</label>
-            <input asp-for="WeightOrPieces" class="form-control" />
+            <label asp-for="WeightOrPieces" class="form-label">Order Quantity</label>
+            <input asp-for="WeightOrPieces" class="form-control" value="1" />
+            <small class="form-text text-muted">
+                Enter the quantity based on packaging type (grams or pieces).
+            </small>
             <span asp-validation-for="WeightOrPieces" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="SellingPrice" class="form-label"></label>
+            <label asp-for="SellingPrice" class="form-label">Selling Price</label>
             <input asp-for="SellingPrice" class="form-control" />
+            <small class="form-text text-muted">
+                Input the selling price to be displayed on the label.
+            </small>
             <span asp-validation-for="SellingPrice" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="BatchNumber" class="form-label"></label>
-            <select asp-for="BatchNumber" class="form-control" id="batchDropdown">
-                <option value="">-- Select Batch --</option>
-            </select>
-            <span asp-validation-for="BatchNumber" class="text-danger"></span>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="NumberOfLabels" class="form-label"></label>
-            <input asp-for="NumberOfLabels" class="form-control" value="1" />
+            <label asp-for="NumberOfLabels" class="form-label">Number of Labels</label>
+            <input asp-for="NumberOfLabels" class="form-control" id="NumberOfLabels" />
+            <small class="form-text text-muted">
+                Default is based on current inventory. Adjust if fewer labels are needed.
+            </small>
             <span asp-validation-for="NumberOfLabels" class="text-danger"></span>
         </div>
     </div>
@@ -58,28 +74,37 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
     <script>
         $(document).ready(function () {
-            // Load batches for selected product
-            $('#ProductId').on('change', function () {
-                const productId = $(this).val();
-                const $batchDropdown = $('#batchDropdown');
-                $batchDropdown.empty().append('<option value="">Loading...</option>');
 
-                if (productId) {
-                    $.getJSON('/Label/GetBatches', { productId }, function (data) {
-                        $batchDropdown.empty().append('<option value="">-- Select Batch --</option>');
-                        $.each(data, function (i, batch) {
-                            $batchDropdown.append(`<option value="${batch}">${batch}</option>`);
-                        });
-                    });
-                } else {
-                    $batchDropdown.empty().append('<option value="">-- Select Batch --</option>');
-                }
+            // Load all batches on page load
+            $.getJSON('/Label/GetAllBatches', function (data) {
+                const $batchDropdown = $('#batchDropdown');
+                $batchDropdown.empty().append('<option value="">-- Select Batch --</option>');
+                $.each(data, function (i, batch) {
+                    $batchDropdown.append(`<option value="${batch}">${batch}</option>`);
+                });
             });
 
-            // Submit form manually using AJAX
+            // On batch selection, autofill product info
+            $('#batchDropdown').on('change', function () {
+                const batchNo = $(this).val();
+                if (!batchNo) return;
+
+                $.getJSON('/Label/GetBatchInfo', { batchNo }, function (data) {
+                    if (data.success) {
+                        $('#ProductId').val(data.productId);
+                        $('#ProductName').val(data.productName);
+                        $('#PackagingType').val(data.packagingType);
+                        $('#NumberOfLabels').val(data.currentQty);
+                        $('input[name="SellingPrice"]').val(data.priceSuggestion);
+                    } else {
+                        alert('Batch not found.');
+                    }
+                });
+            });
+
+            // Submit form manually
             $('#submitLabelView').on('click', function () {
                 const model = {
                     ProductId: $('#ProductId').val(),
@@ -94,12 +119,15 @@
                     type: "POST",
                     url: '/Label/LabelView',
                     data: model,
-                    success: function () {
-                        // Redirect or show success message
-                        window.location.href = '/Label/PrintResult'; // Update as needed
+                    success: function (html) {
+                        const printWindow = window.open("", "_blank");
+                        printWindow.document.open();
+                        printWindow.document.write(html);
+                        printWindow.document.close();
                     },
                     error: function (xhr) {
-                        alert('Error submitting form. Please check your input.');
+                        console.error("LabelView error:", xhr.responseText);
+                        alert('Error generating label preview: ' + xhr.statusText);
                     }
                 });
             });

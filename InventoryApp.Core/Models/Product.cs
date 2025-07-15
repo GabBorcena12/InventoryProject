@@ -9,6 +9,9 @@ namespace InventoryApp.Core.Models
         [Display(Name = "Product Name")]
         public string ProductName { get; set; }
 
+        [Display(Name = "Product Alias")]
+        public string? ProductAlias { get; set; }
+
         [Display(Name = "Volume")]
         public int Volume { get; set; } = 0;
 
