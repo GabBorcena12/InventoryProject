@@ -74,6 +74,13 @@ jobs:
           -v /home/$USER/sql_backups:/var/opt/mssql/backup \
           -p 1433:1433 \
           mcr.microsoft.com/mssql/server:2022-latest
+          
+        echo "⏳ Waiting for MSSQL to be ready..."
+        until docker exec mssql /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -Q "SELECT 1" > /dev/null 2>&1; do
+          echo "❌ SQL Server not ready, retrying in 5s..."
+          sleep 5
+        done
+        echo "✅ SQL Server is ready!"
 
         echo "🚀 Starting new containers..."
         docker run -d --name inventoryapi --network inventory-net \

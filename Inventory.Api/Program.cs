@@ -99,6 +99,28 @@ namespace Inventory.Api
             app.UseAuthorization();
 
             app.MapControllers();
+            app.UseHttpsRedirection();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.MapControllers();
+
+            // ✅ Auto-apply migrations
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var db = services.GetRequiredService<ApplicationDbContext>();
+                    db.Database.Migrate();
+                    Console.WriteLine("✅ API: EF Core Migrations applied.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ API: Migration failed: {ex.Message}");
+                }
+            }
+
+            app.Run();
 
             app.Run();
         }
