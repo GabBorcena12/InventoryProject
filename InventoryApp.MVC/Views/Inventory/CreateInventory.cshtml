@@ -3,6 +3,9 @@
     ViewData["Title"] = "Add Inventory";
 }
 
+<!-- Include Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <div class="container-fluid m-4">
     <h2>@ViewData["Title"]</h2>
 
@@ -10,7 +13,7 @@
     @await Html.PartialAsync("_ErrorMessage")
     <form asp-action="CreateInventory" method="post" class="row g-3">
 
-        <!-- Batch Number (Read-only) -->
+        <!-- Batch Number -->
         <div class="form-group col-12 col-md-6 col-lg-4">
             <label asp-for="BatchNo"></label>
             <input asp-for="BatchNo" class="form-control" value="@ViewBag.BatchNo" readonly />
@@ -26,17 +29,17 @@
             <span asp-validation-for="SKU" class="text-danger"></span>
         </div>
 
-        <!-- Product -->
+        <!-- Product with Select2 Search -->
         <div class="form-group col-12 col-md-6 col-lg-4">
             <label asp-for="ProductId"></label>
-            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-control">
+            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-control select2-dropdown" id="ProductId">
                 <option value="">-- Select Product --</option>
             </select>
-            <small class="form-text text-muted">Select the product being added to inventory.</small>
+            <small class="form-text text-muted">Search or select the product to add to inventory.</small>
             <span asp-validation-for="ProductId" class="text-danger"></span>
         </div>
 
-        <!-- Order Quantity -->
+        <!-- Initial Quantity -->
         <div class="form-group col-12 col-md-6 col-lg-4">
             <label>Order Quantity</label>
             <input asp-for="InitialQuantity" class="form-control" placeholder="Per gram or piece" />
@@ -90,12 +93,23 @@
             <button type="submit" class="btn btn-primary px-5">Add to Inventory</button>
             <a asp-action="Inventory" class="btn btn-secondary ms-2">Back to List</a>
         </div>
-
     </form>
 </div>
 
+<!-- Scripts Section -->
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <!-- Include Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('.select2-dropdown').select2({
+                placeholder: "-- Select Product --",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
 }
