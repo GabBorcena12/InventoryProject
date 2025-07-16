@@ -1,0 +1,114 @@
+﻿@{
+    ViewData["Title"] = "Refund Item";
+}
+
+<div class="container-fluid m-4">
+    <h2>@ViewData["Title"]</h2>
+
+    <form asp-action="CreateRefund" method="post" class="row g-3 needs-validation">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @Html.AntiForgeryToken()
+
+        <!-- OR Number -->
+        <div class="form-group col-12 col-md-6">
+            <label for="TransactionHeaderId">OR Number</label>
+            <select id="TransactionHeaderId" name="TransactionHeaderId" class="form-select select2" required>
+                <option value="">-- Select OR Number --</option>
+                @foreach (var orItem in ViewBag.ORNumbers)
+                {
+                    <option value="@orItem.TransactionHeaderId">@orItem.ORNumber</option>
+                }
+            </select>
+            <small class="form-text text-muted">Choose the OR number of the original transaction.</small>
+        </div>
+
+        <!-- Product -->
+        <div class="form-group col-12 col-md-6">
+            <label for="Sku">Product</label>
+            <select id="Sku" name="Sku" class="form-select select2" required>
+                <option value="">-- Select Product --</option>
+            </select>
+            <small class="form-text text-muted">Select the product (SKU) being refunded.</small>
+        </div>
+
+        <!-- Quantity -->
+        <div class="form-group col-12 col-md-6">
+            <label for="Quantity">Quantity to Refund</label>
+            <input type="number" name="Quantity" id="Quantity" class="form-control" min="1" required />
+            <small class="form-text text-muted">Enter the quantity of items being refunded.</small>
+        </div>
+
+        <!-- Broken or Not -->
+        <div class="form-group col-12 col-md-6">
+            <label for="IsBroken">Item Condition</label>
+            <select id="IsBroken" name="IsBroken" class="form-select" required>
+                <option value="">-- Select Condition --</option>
+                <option value="true">Broken / Unsellable</option>
+                <option value="false">Fit for Sale</option>
+            </select>
+            <small class="form-text text-muted">Choose whether the refunded item is broken or can still be sold.</small>
+        </div>
+
+        <!-- Reason -->
+        <div class="form-group col-12 col-md-6">
+            <label for="Reason">Reason for Refund</label>
+            <textarea name="Reason" id="Reason" class="form-control" rows="2" required placeholder="e.g. Broken, Expired, Wrong item"></textarea>
+            <small class="form-text text-muted">Provide the reason for refunding this item.</small>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <a asp-action="RefundList" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Submit Refund</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <!-- jQuery must load before Select2 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(function () {
+            $('.select2').select2();
+
+            // When OR number changes, load products dynamically
+            $('#TransactionHeaderId').change(function () {
+                var headerId = $(this).val();
+                var $productDropdown = $('#Sku');
+
+                if (headerId) {
+                    $.getJSON('/POS/GetProductsByOR', { transactionHeaderId: headerId }, function (data) {
+                        $productDropdown.empty().append('<option value="">-- Select Product --</option>');
+                        $.each(data, function (i, item) {
+                            $productDropdown.append(
+                                $('<option>', {
+                                    value: item.id,
+                                    text: item.display
+                                }).attr('data-quantity', item.quantitySold) // ✅ attach quantity sold
+                            );
+                        });
+                    });
+                } else {
+                    $productDropdown.empty().append('<option value="">-- Select Product --</option>');
+                }
+            });
+
+            // Auto-populate quantity when product changes
+            $('#Sku').on('change', function () {
+                var quantity = $(this).find(':selected').data('quantity');
+                if (quantity) {
+                    $('#Quantity').val(quantity);
+                    $('#Quantity').attr('max', quantity); // ✅ cap at sold qty
+                } else {
+                    $('#Quantity').val('');
+                    $('#Quantity').removeAttr('max');
+                }
+            });
+        });
+    </script>
+}

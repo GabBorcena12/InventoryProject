@@ -10,29 +10,29 @@
 
         <!-- Step 1: Select Batch -->
         <div class="col-md-6 mb-3">
-            <label asp-for="BatchNumber" class="form-label">Batch Number</label>
-            <select asp-for="BatchNumber" class="form-control" id="batchDropdown">
-                <option value="">-- Select Batch --</option>
+            <label asp-for="SKU" class="form-label">SKU</label>
+            <select asp-for="SKU" class="form-control" id="productDropdown">
+                <option value="">-- Select SKU --</option>
             </select>
             <small class="form-text text-muted">
-                Select the batch for which you want to print labels. Only active batches with inventory are shown.
+                Select the SKU for which you want to print labels. Only active SKU with inventory are shown.
             </small>
-            <span asp-validation-for="BatchNumber" class="text-danger"></span>
+            <span asp-validation-for="SKU" class="text-danger"></span>
         </div>
 
         <!-- Step 2: Auto-filled fields -->
         <div class="col-md-6 mb-3">
-            <label asp-for="ProductName" class="form-label">Product</label>
-            <input asp-for="ProductName" class="form-control" id="ProductName" readonly />
+            <label asp-for="ProductName" class="form-label">Product Name</label>
+            <input asp-for="ProductName" class="form-control" id="ProductName" placeholder="e.g. Toei Cat Tuna 500g" readonly />
             <input asp-for="ProductId" type="hidden" id="ProductId" />
             <small class="form-text text-muted">
-                Product is automatically filled based on the selected batch.
+                Product is automatically filled based on the selected SKU.
             </small>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="PackagingType" class="form-label">Packaging Type</label>
-            <input asp-for="PackagingType" class="form-control" id="PackagingType" readonly />
+            <label asp-for="PackagingType" class="form-label">Unit of Measure</label>
+            <input asp-for="PackagingType" class="form-control" id="PackagingType" placeholder="e.g. Grams or Piece" readonly />
             <small class="form-text text-muted">
                 Indicates whether the product is packed by weight (grams) or by piece.
             </small>
@@ -40,7 +40,7 @@
 
         <!-- Step 3: User Inputs -->
         <div class="col-md-6 mb-3">
-            <label asp-for="WeightOrPieces" class="form-label">Order Quantity</label>
+            <label asp-for="WeightOrPieces" class="form-label">Stock Volume</label>
             <input asp-for="WeightOrPieces" class="form-control" value="1" />
             <small class="form-text text-muted">
                 Enter the quantity based on packaging type (grams or pieces).
@@ -49,7 +49,7 @@
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="SellingPrice" class="form-label">Selling Price</label>
+            <label asp-for="SellingPrice" class="form-label">Unit Price</label>
             <input asp-for="SellingPrice" class="form-control" />
             <small class="form-text text-muted">
                 Input the selling price to be displayed on the label.
@@ -77,60 +77,69 @@
     <script>
         $(document).ready(function () {
 
-            // Load all batches on page load
-            $.getJSON('/Label/GetAllBatches', function (data) {
-                const $batchDropdown = $('#batchDropdown');
-                $batchDropdown.empty().append('<option value="">-- Select Batch --</option>');
-                $.each(data, function (i, batch) {
-                    $batchDropdown.append(`<option value="${batch}">${batch}</option>`);
+            // Load all product on page load
+            $.getJSON('/Label/GetAllProductVariant', function (data) {
+                const $productDropdown = $('#productDropdown');
+                $productDropdown.empty().append('<option value="">-- Select Product Variant --</option>');
+                $.each(data, function (i, product) {
+                    $productDropdown.append(`<option value="${product}">${product}</option>`);
                 });
             });
 
-            // On batch selection, autofill product info
-            $('#batchDropdown').on('change', function () {
-                const batchNo = $(this).val();
-                if (!batchNo) return;
+            // On product selection, autofill product info
+            $('#productDropdown').on('change', function () {
+                const variantSku = $(this).val();
+                if (!variantSku) return;
 
-                $.getJSON('/Label/GetBatchInfo', { batchNo }, function (data) {
+                $.getJSON('/Label/GetProductVariantInfo', { variantSku }, function (data) {
                     if (data.success) {
                         $('#ProductId').val(data.productId);
                         $('#ProductName').val(data.productName);
                         $('#PackagingType').val(data.packagingType);
-                        $('#NumberOfLabels').val(data.currentQty);
+                        $('#WeightOrPieces').val(data.variantVolume);
+                        $('#NumberOfLabels').val("1");
                         $('input[name="SellingPrice"]').val(data.priceSuggestion);
                     } else {
-                        alert('Batch not found.');
+                        alert('Product not found.');
                     }
                 });
             });
 
-            // Submit form manually
             $('#submitLabelView').on('click', function () {
-                const model = {
-                    ProductId: $('#ProductId').val(),
-                    PackagingType: $('#PackagingType').val(),
-                    WeightOrPieces: $('input[name="WeightOrPieces"]').val(),
-                    SellingPrice: $('input[name="SellingPrice"]').val(),
-                    BatchNumber: $('#batchDropdown').val(),
-                    NumberOfLabels: $('input[name="NumberOfLabels"]').val()
-                };
+            // Open the window immediately on user click
+            const printWindow = window.open("", "_blank");
+            if (!printWindow) {
+                alert("Popup blocked! Please allow popups for this site.");
+                return;
+            }
 
-                $.ajax({
-                    type: "POST",
-                    url: '/Label/LabelView',
-                    data: model,
-                    success: function (html) {
-                        const printWindow = window.open("", "_blank");
-                        printWindow.document.open();
-                        printWindow.document.write(html);
-                        printWindow.document.close();
-                    },
-                    error: function (xhr) {
-                        console.error("LabelView error:", xhr.responseText);
-                        alert('Error generating label preview: ' + xhr.statusText);
-                    }
-                });
+            const model = {
+                ProductId: $('#ProductId').val(),
+                ProductName: $('#ProductName').val(),
+                PackagingType: $('#PackagingType').val(),
+                WeightOrPieces: $('input[name="WeightOrPieces"]').val(),
+                SellingPrice: $('input[name="SellingPrice"]').val(),
+                SKU: $('#productDropdown').val(),
+                NumberOfLabels: $('input[name="NumberOfLabels"]').val()
+            };
+
+            $.ajax({
+                type: "POST",
+                url: '/Label/LabelView',
+                data: model,
+                success: function (html) {
+                    // Write content to the window that was opened on click
+                    printWindow.document.open();
+                    printWindow.document.write(html);
+                    printWindow.document.close();
+                },
+                error: function (xhr) {
+                    console.error("LabelView error:", xhr.responseText);
+                    alert('Error generating label preview: ' + xhr.statusText);
+                }
             });
+        });
+
         });
     </script>
 }

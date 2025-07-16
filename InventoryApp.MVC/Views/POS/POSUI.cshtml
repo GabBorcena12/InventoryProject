@@ -1,0 +1,2160 @@
+﻿@{
+    ViewData["Title"] = "POS Application";
+    Layout = null;
+}
+@{
+    var serializedDiscounts = Newtonsoft.Json.JsonConvert.SerializeObject(Model.POSDiscounts);
+    var serializedProducts = Newtonsoft.Json.JsonConvert.SerializeObject(Model.POSProducts);
+}
+<style>
+    .hover-scale {
+        transition: transform 0.3s ease; /* smooth animation */
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.3); /* use transform, not scale property */
+    }
+
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-button {
+        display: none;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: transparent;
+        border-radius: 8px;
+    }
+
+    .sidebar-icon {
+        color: #c84c70;
+    }
+
+    .bg-customize {
+        background-color: #d15176;
+    }
+
+    .bg-customize:hover {
+        background-color: #c84c70;
+    }
+
+    .bg-orange {
+        background-color: orange;
+    }
+
+    .bg-orange:hover {
+        background-color: darkorange
+    }
+
+    .bg-blue {
+        background-color: #005ee6;
+    }
+
+    .bg-blue:hover {
+        background-color: #0252c6
+    }
+
+    .text-orange {
+        color: orangered;
+    }
+
+    .text-orange:hover {
+        color: darkorange
+    }
+    
+    .text-black {
+        color: black;
+    }
+
+    .text-black:hover {
+            color: #131313
+    }
+
+    .product-card {
+        transition: transform 0.3s ease; /* smooth animation */
+    }
+    .product-card:hover {
+        scale: 1.05;
+    }
+
+    @@media (hover: hover) {
+    .add-to-cart:hover
+    {
+        background-color: #3e696a !important;
+    }}
+
+    @@keyframes fadeInOut {
+        0% {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        10% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        90% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+    }
+
+    .animate-fade-in-out {
+        animation: fadeInOut 3s ease-in-out;
+    }
+
+    .form-check-input.circular-checkbox {
+        border-radius: 50%;
+        width: 1.2em;
+        height: 1.2em;
+    }
+
+    /* Optional: Add to your app.css if not purely utility-based */
+    .modal-input {
+        @@apply w-full border px-4 py-2 rounded text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400;
+    }
+</style>
+
+<!-- Tailwind CSS -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<div class="flex h-screen bg-gray-300">
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <div id="printArea" class="hidden print:block p-4 text-xs font-mono whitespace-pre"></div>
+
+    <!-- Sidebar -->
+    <div class="h-screen w-20 md:w-24 bg-white border-r flex flex-col items-center justify-center py-6 shadow-md space-y-8">
+
+        <!-- Nav Icons -->
+        <nav class="flex flex-col items-center space-y-6 w-full">
+
+            <!-- Active Item -->
+            <div class="relative w-full flex justify-center">
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 h-10 w-1 bg-orange-500 rounded-full"></div>
+                <button id="sidebarHomeBtn" class="flex flex-col items-center text-orange-500 hover-scale">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon w-6 h-6" fill="none" stroke="currentColor"
+                         stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M3 12l2-2m0 0l7-7 7 7m-7-7v18" />
+                    </svg>
+                    <span class="text-[10px] mt-1 hidden md:block">Home</span>
+                </button>
+            </div>
+
+            <!-- Other Items -->
+            <!--New Transaction-->
+            <button id="sidebarNewTransactionBtn" class="flex flex-col items-center text-gray-500 hover:text-orange-500 transition hover-scale">
+                <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon w-6 h-6" fill="none" stroke="currentColor"
+                     stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                <span class="text-[10px] mt-1 hidden md:block">New</span>
+            </button>
+
+            <!--Search-->
+            <button id="sidebarSearchBtn" class="flex flex-col items-center text-gray-500 hover:text-orange-500 transition hover-scale">
+                <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon w-6 h-6" fill="none" stroke="currentColor"
+                     stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M16 10a6 6 0 11-12 0 6 6 0 0112 0z" />
+                </svg>
+                <span class="text-[10px] mt-1 hidden md:block">Search</span>
+            </button>
+
+            <!--Profile-->
+            <div class="relative group">
+                <button class="flex flex-col items-center text-gray-500 hover:text-orange-500 transition hover-scale">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A4 4 0 0112 15a4 4 0 016.879 2.804M15 11a3 3 0 10-6 0 3 3 0 006 0z"></path>
+                    </svg>
+                    <span class="text-[10px] mt-1 hidden md:block">Profile</span>
+                </button>
+
+                <!-- Tooltip -->
+                <span id="profile-tool-tip" class="absolute bottom-full mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
+                </span>
+            </div>
+
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <div class="flex-1 p-6 overflow-hidden">
+        <div class="flex gap-6 h-full">
+
+            <!-- Left: Product Grid (65%) -->
+            <div class="overflow-y-auto pr-2" style="flex: 0 0 58%;">
+                <!-- Search Bar (Sticky) -->
+                <div class="sticky top-0 z-10 py-4 bg-gray-300">
+                    <div class="relative">
+                        <!-- Search Icon -->
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 mr-2">
+                            <div class="w-10 h-10 bg-[#de2489] text-white rounded-full flex items-center justify-center shadow bg-customize">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2"
+                                     viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Search Input -->
+                        <input type="text"
+                               id="product-search"
+                               placeholder="Search product..."
+                               class="w-full pl-14 pr-5 py-4 text-lg rounded-full border border-gray-300 shadow-sm focus:outline-none transition duration-200" />
+
+                    </div>
+                </div>
+
+                <!-- Product Grid (Padding added so it's not hidden behind sticky search) -->
+                <div id="product-grid" class="pt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <!--Dynamic value-->
+                </div>
+
+            </div>
+
+            <!-- Right: Cart (35%) -->
+            <div class="bg-white rounded-xl shadow flex flex-col p-4 relative" style="flex: 0 0 41%;">
+                
+                <!-- Cart Header -->
+                <div class="flex justify-between items-center mb-1">
+                    <div class="relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.4 5.2a1 1 0 001 1.8h12.8a1 1 0 001-1.2L20 13M7 13H5.4" />
+                        </svg>
+                        <span id="cart-count" class="absolute -top-2 -right-3 text-xl bg-teal-600 fw-bold rounded-full w-5 h-5 flex items-center justify-center" style="
+                            font-weight: bold;color: darkred;">0</span>
+                    </div>
+                    <button id="clear-cart" class="text-gray-400 hover:text-red-500 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Cart Items Container -->
+                <div id="cart-items" class="overflow-y-auto flex-grow space-y-4 mb-3">
+                    <div id="empty-cart-message" class="text-gray-500 text-center italic">No items added yet.</div>
+                </div>
+
+                <!-- Sub Total Container-->
+                <div id="amountContainer" class="rounded-md space-y-2" style="bottom: 0 !important;vertical-align: bottom;">
+                    <!-- SUBTOTAL -->
+                    <div class="flex items-center gap-2">
+                        <span class="ml-2 text-sm font-semibold text-black whitespace-nowrap">SUBTOTAL</span>
+                        <span id="subtotal"
+                              class="text-base w-full text-right px-1 py-0.5 rounded font-semibold text-black">
+                            ₱ 0.00
+                        </span>
+                    </div>
+
+                    <!-- REGULAR DISCOUNT -->
+                    <div class="flex items-center gap-2">
+                        <span class="ml-2 text-sm font-semibold text-red-600 whitespace-nowrap">REGULAR DISCOUNT</span>
+                        <span id="regular-discount"
+                              class="text-base w-full text-right px-1 py-0.5 rounded font-semibold text-red-600">
+                            ₱ 0.00
+                        </span>
+                    </div>
+
+                    <!-- SENIOR/PWD DISCOUNT -->
+                    <div class="flex items-center gap-2">
+                        <span class="ml-2 text-sm font-semibold text-red-600 whitespace-nowrap">SENIOR/PWD DISCOUNT</span>
+                        <span id="senior-discount"
+                              class="text-base w-full text-right px-1 py-0.5 rounded font-semibold text-red-600">
+                            ₱ 0.00
+                        </span>
+                    </div>
+
+                    <!-- VAT INCLUDED -->
+                    <div id="vatContainer" class="flex items-center gap-2">
+                        <span class="ml-2 text-sm font-semibold text-red-600 whitespace-nowrap">
+                            VAT INCLUDED
+                        </span>
+                        <span id="vatIncluded"
+                              class="text-base w-full text-right px-1 py-0.5 rounded font-semibold text-red-600">
+                            ₱ 0.00 (Included)
+                        </span>
+                    </div>
+
+
+                    <!-- VAT EXEMPT -->
+                    <div id="vatContainer" class="flex items-center gap-2">
+                        <span class="ml-2 text-sm font-semibold text-red-600 whitespace-nowrap">
+                            VAT EXEMPT
+                        </span>
+                        <span id="vatExcluded"
+                              class="text-base w-full text-right px-1 py-0.5 rounded font-semibold text-red-600">
+                            ₱ 0.00 (Exempt)
+                        </span>
+                    </div>
+
+                    <!-- TOTAL -->
+                    <div class="flex items-center gap-2">
+                        <span class="ml-2 text-sm font-bold text-green-700 whitespace-nowrap">TOTAL</span>
+                        <span id="total-amount"
+                              class="text-lg w-full text-right px-2 py-1 rounded font-bold text-green-700">
+                            ₱ 0.00
+                        </span>
+                    </div>
+                <!-- PAY BUTTON -->
+                <button id="payButton"
+                            class="mt-3 w-full text-white py-2 rounded-lg font-bold text-lg transition bg-customize">
+                    Proceed to Payment
+                </button>
+
+            </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unified Payment Modal -->
+<div id="paymentModal"
+     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-[32rem] p-8 space-y-6">
+        <h2 class="text-xl font-bold text-gray-800">Choose Payment Method</h2>
+
+        <!-- Payment Method Selection -->
+        <div class="flex justify-between space-x-4">
+            <label class="flex items-center space-x-2">
+                <input type="radio" name="paymentMethod" id="radioCash" checked />
+                <span>Cash Payment</span>
+            </label>
+            <label class="flex items-center space-x-2">
+                <input type="radio" name="paymentMethod" id="radioGcash" />
+                <span>GCash Payment</span>
+            </label>
+        </div>
+
+        <!-- CASH Section -->
+        <div id="cashSection" class="space-y-3">
+            <div>
+                <label for="cashAmount" class="block text-sm font-semibold text-gray-700 mb-1">Cash Amount</label>
+                <input type="number" id="cashAmount"
+                       class="w-full border px-4 py-2 rounded text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                       placeholder="Enter cash amount" />
+            </div>
+            <div class="text-sm text-gray-600">
+                Change: <span id="cashChange" class="font-bold text-green-600">₱0.00</span>
+            </div>
+        </div>
+
+        <!-- GCASH Section -->
+        <div id="gcashSection" class="space-y-3 hidden">
+            <div>
+                <label for="gcashAmount" class="block text-sm font-semibold text-gray-700 mb-1">GCash Amount</label>
+                <input type="number" id="gcashAmount"
+                       class="w-full border px-4 py-2 rounded text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                       placeholder="Enter GCash amount" />
+            </div>
+            <div>
+                <label for="gcashReference" class="block text-sm font-semibold text-gray-700 mb-1">Reference Number</label>
+                <input type="text" id="gcashReference"
+                       class="w-full border px-4 py-2 rounded text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                       placeholder="Enter reference no." />
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="space-y-3">
+            <button id="printReceiptBtn"
+                    class="w-full bg-blue-500 text-white py-2 rounded font-semibold hover:bg-blue-600 transition">
+                Print Receipt
+            </button>
+
+            <button id="completeTransactionBtn"
+                    class="w-full bg-green-600 text-white py-2 rounded font-semibold opacity-50 cursor-not-allowed"
+                    disabled>
+                Complete Transaction
+            </button>
+
+            <button id="cancelPayment"
+                    class="w-full text-gray-600 hover:text-black text-sm underline">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Remove Senior/Pwd Discounts To All Items Confirmation Modal -->
+<div id="removeDiscountModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-6">
+
+        <!-- Modal Header -->
+        <div class="bg-customize -m-6 rounded-t-xl px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
+                </svg>
+                Senior/Pwd Discount Removal Confirmation
+            </h2>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="margin-top:3rem !important">
+            <div class="text-sm text-gray-800 space-y-2 leading-relaxed">
+                <p>This will remove all Senior and PWD discounts from the cart.</p>
+                <p>Prices will revert to their original amounts, and this action can’t be undone unless the discount code is rescanned.</p>
+            </div>
+        </div>
+
+        <!-- Reason Dropdown -->
+        <div>
+            <label for="statutoryDiscountRemoveReason" class="block text-sm font-medium text-gray-700 mb-1">
+                Reason for changing the discount:
+            </label>
+            <select id="statutoryDiscountRemoveReason"
+                    class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-500">
+                <option value="">-- Select Reason --</option>
+                <option value="Customer requested a better deal">Customer requested a better deal</option>
+                <option value="Manager override">Manager override</option>
+                <option value="System suggested a better discount">System suggested a better discount</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <!-- Modal Footer / Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4 border-t pt-4">
+            <button id="cancelRemoveDiscountBtn"
+                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition">
+                Cancel
+            </button>
+            <button id="confirmRemoveDiscountBtn"
+                    class="bg-customize text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-600 transition">
+                Yes, Remove Discount
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Discount Change Confirmation -->
+<div id="discountChangeModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-6">
+
+        <!-- Modal Header -->
+        <div class="bg-customize -m-6 rounded-t-xl px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
+                </svg>
+                Discount Change / Removal Confirmation
+            </h2>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="margin-top:3rem !important">
+            <div id="discountChangeModalText" class="text-sm text-gray-800 space-y-2 leading-relaxed">
+                <!-- Dynamic content injected by JS -->
+            </div>
+        </div>
+
+        <!-- Reason Dropdown -->
+        <div>
+            <label for="changeDiscountReason" class="block text-sm font-medium text-gray-700 mb-1">
+                Reason for changing the discount:
+            </label>
+            <select id="changeDiscountReason"
+                    class="w-full border border-gray-300 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-500">
+                <option value="">-- Select Reason --</option>
+                <option value="Customer requested a better deal">Customer requested a better deal</option>
+                <option value="Manager override">Manager override</option>
+                <option value="System suggested a better discount">System suggested a better discount</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <!-- Modal Footer / Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4 border-t pt-4">
+            <button id="cancelDiscountChangeBtn"
+                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition">
+                Cancel
+            </button>
+            <button id="confirmDiscountChangeBtn"
+                    class="bg-customize text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-600 transition">
+                Yes, Proceed
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Yes/No Confirmation -->
+<div id="confirmationModal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-6">
+
+        <!-- Modal Header -->
+        <div class="bg-customize -m-6 rounded-t-xl px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z" />
+                </svg>
+                Do you want to Proceed?
+            </h2>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="margin-top:3rem !important">
+            <div id="confirmationModalText" class="text-sm text-gray-800 space-y-2 leading-relaxed">
+                <!-- Dynamic content injected by JS -->
+            </div>
+        </div>
+
+        <!-- Modal Footer / Action Buttons -->
+        <div class="flex justify-end gap-3 pt-4 border-t pt-4">
+            <button id="cancelModalBtn"
+                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition">
+                Cancel
+            </button>
+            <button id="approveModalBtn"
+                    class="bg-customize text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-orange-600 transition">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const discounts = @Html.Raw(serializedDiscounts);
+    const products = @Html.Raw(serializedProducts);
+</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    let vatPercentage = @ViewBag.VatPercentage ?? 1.12; // VAT percentage
+    let isBusinessNonVat = @(ViewBag.IsBusinessNonVat?.ToString().ToLower() ?? "false");
+
+    let cart = []; // store items on cart
+    let auditLogs = [];
+    let tempAuditLogs = []; // temp audit logs per transaction
+    let lastCartId = 0; // use to assign cart number
+    let lastUpdateCartId = 0; // use for auto scroll on newly added or update items on cart
+    let currentUser = "@ViewBag.Username";; // currently login user
+    let discountChangeReason = null;
+
+    const storeCode = "@ViewBag.StoreCode";
+    const terminalId = "@ViewBag.TerminalId";
+    let lastTransactionNo = parseFloat('@ViewBag.LastTransactionNo');
+    let currentTransactionId = null; // This should be set null so when updateCart() detect new item it will generate transaction id
+    let receiptPrinted = false;
+
+    // disable zoom in / zoom out
+    window.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    window.addEventListener('keydown', function(e) {
+        // Ctrl + '+' (plus), Ctrl + '-' (minus), Ctrl + '0' (reset)
+        if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+            e.preventDefault();
+        }
+    });
+
+    // Optional: Disable gesturestart for pinch zoom on some browsers
+    window.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+
+    function validateGcashPayment() {
+        if ($('#radioGcash').is(':checked')) {
+            const totalDue = parseFloat($('#total-amount').text().replace(/[₱,\s]/g, '')) || 0;
+            const received = parseFloat($('#gcashAmount').val()) || 0;
+            const reference = $('#gcashReference').val().trim();
+
+            if (received >= totalDue && reference !== '') {
+                $('#printReceiptBtn')
+                    .removeAttr('disabled')
+                    .removeClass('opacity-50 cursor-not-allowed');
+            } else {
+                $('#printReceiptBtn')
+                    .attr('disabled', true)
+                    .addClass('opacity-50 cursor-not-allowed');
+            }
+        }
+    }
+
+    function setToDefault()
+    {
+        // set to default
+        if ($('#radioCash').is(':checked')) {       
+            $('#cashAmount')
+                .removeAttr('disabled')
+                .removeClass('opacity-50 cursor-not-allowed');
+
+            $('#cashAmount').val('');
+            $('#cashChange').text('₱0.00');
+        }
+
+        if ($('#radioGcash').is(':checked')) {
+            $('#gcashAmount')
+                .removeAttr('disabled')
+                .removeClass('opacity-50 cursor-not-allowed');
+
+            $('#gcashReference')
+                .removeAttr('disabled')
+                .removeClass('opacity-50 cursor-not-allowed');
+
+            $('#gcashAmount').val('');
+            $('#gcashReference').val('');
+        }
+
+        $('#printReceiptBtn')
+            .attr('disabled', true)
+            .addClass('opacity-50 cursor-not-allowed');
+
+        $('#completeTransactionBtn')
+            .attr('disabled', true)
+            .addClass('opacity-50 cursor-not-allowed');
+
+        closeModal();
+    }
+
+    function formatReceipt(cart, options = {}) {
+        const {
+            businessName = "My Business Name",
+            businessAddress = "123 Sample St., City, PH",
+            tin = "123-456-789-000",
+            permitNumber = "PTR-2025-001234",
+            min = "MIN: 202508060001",
+            serial = "SN: ABC1234567",
+            datetime = new Date(),
+            orNumber = "000123",
+            cashier = "Cashier: John Doe",
+            footer = "Thank you for your purchase!",
+        } = options;
+
+        const pad = (text = "", width = 32, align = "left") => {
+            if (text.length >= width) return text.slice(0, width);
+            if (align === "right") return text.padStart(width);
+            if (align === "center") return text.padStart(Math.floor((width + text.length) / 2)).padEnd(width);
+            return text.padEnd(width);
+        };
+
+        const formatLineItem = (item) => {
+            const name = item.name.length > 28 ? item.name.slice(0, 28) + "…" : item.name;
+            const qty = item.qty.toString().padStart(2, ' ');
+            const price = parseFloat(item.pricePerKg || 0).toFixed(2).padStart(7, ' ');
+            return `${name}\n${qty} x ${price}`;
+        };
+
+        const formatDiscountLine = (item) => {
+            const discountLabel = item.name.length > 22 ? item.name.slice(0, 22) + "…" : item.name;
+            const discountAmount = parseFloat(item.pricePerKg || 0).toFixed(2);
+            return `  → ${discountLabel} - ₱${Math.abs(discountAmount)}`;
+        };
+
+        const lines = [];
+
+        // Header
+        lines.push(pad(businessName.toUpperCase(), 32, "center"));
+        lines.push(pad(businessAddress, 32, "center"));
+        lines.push(pad(`TIN: ${tin}`, 32, "center"));
+        lines.push(pad(`Permit No: ${permitNumber}`, 32, "center"));
+        lines.push(pad(min, 32, "center"));
+        lines.push(pad(serial, 32, "center"));
+        lines.push("-".repeat(32));
+        lines.push(pad(`Date: ${datetime.toLocaleString()}`, 32));
+        lines.push(pad(cashier, 32));
+        lines.push(pad(orNumber, 32));
+        lines.push("-".repeat(32));
+
+        // Sort cart so that discount immediately follows the item it applies to
+        const sortedCart = [];
+        cart.forEach(item => {
+            if (!item.isDiscount) {
+                sortedCart.push(item);
+                const relatedDiscounts = cart.filter(d => d.isDiscount && d.relatedSKUForSeniorPwdDiscount === item.sku);
+                sortedCart.push(...relatedDiscounts);
+            } else if (!item.relatedSKUForSeniorPwdDiscount) {
+                // stand-alone discount (like statutory marker)
+                sortedCart.push(item);
+            }
+        });
+
+        // Items
+        sortedCart.forEach(item => {
+            if (!item.isDiscount) {
+                lines.push(formatLineItem(item));
+            } else {
+                lines.push(formatDiscountLine(item));
+            }
+        });
+
+        lines.push("-".repeat(32));
+
+        // Totals
+        const subtotal = cart.reduce((sum, i) => sum + (!i.isDiscount ? (i.pricePerKg * i.qty) : 0), 0);
+        const totalDiscount = cart.reduce((sum, i) => sum + (i.isDiscount ? Math.abs(i.pricePerKg) : 0), 0);
+        const total = subtotal - totalDiscount;
+
+        lines.push(pad(`Subtotal: ₱${subtotal.toFixed(2)}`, 32, "right"));
+        lines.push(pad(`Discount: -₱${totalDiscount.toFixed(2)}`, 32, "right"));
+        lines.push(pad(`TOTAL: ₱${total.toFixed(2)}`, 32, "right"));
+        lines.push("-".repeat(32));
+
+        // Footer
+        lines.push(pad(footer, 32, "center"));
+        lines.push(pad("This serves as your", 32, "center"));
+        lines.push(pad("OFFICIAL RECEIPT", 32, "center"));
+        lines.push(pad("", 32)); // spacer
+
+        return lines.join("\n");
+    }
+
+    function generateTransactionId(storeCode, terminalId) {
+        lastTransactionNo += 1;
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const paddedCounter = String(lastTransactionNo).padStart(5, '0');
+        return `OR#${terminalId}-${storeCode}-${today}-${paddedCounter}`;
+    }
+
+    function getVatFromVatInclusiveItem(amount) {
+        if (isBusinessNonVat) {
+            // If the business is non-VAT, the amount is already VAT-exempt
+            return amount;
+        }
+        return amount / vatPercentage;
+    }
+    
+    function getSeniorDiscount(amount) {
+        if (isBusinessNonVat) {
+            // For non-VAT businesses, discount is 20% of the total amount
+            return amount * 0.20;
+        } else {
+            // For VAT-registered businesses, discount is 20% of the VAT-exempt base
+            const vatExclusiveAmount = getVatFromVatInclusiveItem(amount);
+            return vatExclusiveAmount * 0.20;
+        }
+    }
+
+    function generateId() {
+        lastCartId += 1;
+        return lastCartId;
+    }
+
+    function promptRemoveAllSeniorDiscounts() {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('removeDiscountModal');
+            const confirmBtn = document.getElementById('confirmRemoveDiscountBtn');
+            const cancelBtn = document.getElementById('cancelRemoveDiscountBtn');
+
+            // Show modal
+            modal.classList.remove('hidden');
+
+            // Cleanup function
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+
+            // Handlers
+            const onConfirm = () => {                
+                const reasonSelect = document.getElementById('statutoryDiscountRemoveReason');
+                const reason = reasonSelect.value.trim();
+
+                if (!reason) {
+                    showToast("⚠️ Please select a reason before proceeding.", "error");
+                    return;
+                }
+
+                discountChangeReason = reason;
+                closeModal();
+                showToast(`[DISCOUNT REMOVAL] User approved removing all statutory discounts.`, "success");
+                resolve(true);
+            };
+
+            const onCancel = () => {
+                closeModal();
+                showToast(`[DISCOUNT REMOVAL] Action canceled by user.`, "warning");
+                resolve(false);
+            };
+
+            // Add listeners
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+    }
+    
+    function promptChangeDiscount(itemSelected, oldDiscount, newDiscount) {
+        const isOldSeniorOrPWD = oldDiscount?.name?.includes("Senior Discount") || oldDiscount?.name?.includes("PWD Discount");
+        const isNewSeniorOrPWD = newDiscount?.name?.includes("Senior Discount") || newDiscount?.name?.includes("PWD Discount");
+
+        // If switching from statutory to non-statutory, show modal
+        if (isOldSeniorOrPWD && !isNewSeniorOrPWD) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('discountChangeModal');
+                const textContainer = document.getElementById('discountChangeModalText');
+                const confirmBtn = document.getElementById('confirmDiscountChangeBtn');
+                const cancelBtn = document.getElementById('cancelDiscountChangeBtn');
+                const reasonSelect = document.getElementById('changeDiscountReason');
+
+                // Fill content
+                textContainer.innerHTML = `
+                    <p>
+                        Replace <strong>${oldDiscount.name}</strong> (₱${oldDiscount.amount})
+                        with <strong>${newDiscount.name}</strong> (₱${newDiscount.amount})?
+                    </p>
+                    <p class="mt-2">
+                        Do you want to proceed?
+                    </p>
+                `;
+
+                // Clear old input
+                reasonSelect.value = "";
+
+                // Show modal
+                modal.classList.remove('hidden');
+
+                const closeModal = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    cancelBtn.removeEventListener('click', onCancel);
+                };
+
+                const onConfirm = () => {
+                    const reason = reasonSelect.value.trim();
+
+                    if (!reason) {
+                        showToast("⚠️ Please select a reason before proceeding.", "error");
+                        return;
+                    }
+                    discountChangeReason = reason;
+                    closeModal();
+
+                    showToast(`[DISCOUNT CHANGE] User approved the replacement.`, "success");
+
+                    // You can store or pass this info as needed (audit logs, etc.)
+                    itemSelected.discountChangeMetadata = {
+                        reason,
+                    };
+
+                    resolve(true);
+                };
+
+                const onCancel = () => {
+                    closeModal();
+                    showToast(`[DISCOUNT CHANGE] Action canceled by user.`, "warning");
+                    resolve(false);
+                };
+
+                confirmBtn.addEventListener('click', onConfirm);
+                cancelBtn.addEventListener('click', onCancel);
+            });
+        }
+        return true;
+    }
+
+    function promptManualRemovalOfStatutoryDiscount(item) 
+    {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('discountChangeModal');
+            const textContainer = document.getElementById('discountChangeModalText');
+            const confirmBtn = document.getElementById('confirmDiscountChangeBtn');
+            const cancelBtn = document.getElementById('cancelDiscountChangeBtn');
+            const reasonSelect = document.getElementById('changeDiscountReason');
+
+            // Fill content
+            textContainer.innerHTML = `
+                <p>
+                        Are you sure do you want to remove <strong>${item.name} ?
+                </p>
+            `;
+
+            // Clear old input
+            reasonSelect.value = "";
+
+            // Show modal
+            modal.classList.remove('hidden');
+
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                confirmBtn.removeEventListener('click', onConfirm);
+                cancelBtn.removeEventListener('click', onCancel);
+            };
+
+            const onConfirm = () => {
+                const reason = reasonSelect.value.trim();
+
+                if (!reason) {
+                    showToast("⚠️ Please select a reason before proceeding.", "error");
+                    return;
+                }
+                discountChangeReason = reason;
+                closeModal();
+
+                showToast(`[DISCOUNT REMOVAL] User approved the removal.`, "success");
+                resolve(true);
+            };
+
+            const onCancel = () => {
+                closeModal();
+                showToast(`[DISCOUNT REMOVAL] Action canceled by user.`, "warning");
+                resolve(false);
+            };
+
+            confirmBtn.addEventListener('click', onConfirm);
+            cancelBtn.addEventListener('click', onCancel);
+        });
+
+        return true;
+    }
+
+    async function updateCart(itemSelected)
+    {
+        // generate new transaction id if cart has items
+        if (cart && cart.length > 0 && currentTransactionId === null) {
+             currentTransactionId = generateTransactionId(storeCode, terminalId);        
+        }
+
+        let grossTotal = 0;
+        let statutoryAmountTotal = 0;
+        let normalDiscountTotal = 0;
+
+        let cartHtml = `
+            <div class="grid grid-cols-3 font-bold border-b pb-1 mb-2 sticky top-0 bg-white z-10">
+                <div>Item</div>
+                <div class="text-center">Qty</div>
+                <div class="text-right">Price</div>
+            </div>
+        `;
+         // Step 1: Save a copy of the current cart before discount removal
+        const previousCart = [...cart];
+        
+        // check if statutory discount is applied
+        const isSeniorPWDDiscountExist = previousCart.some(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+
+        if(itemSelected != null)
+        {
+            // Get existing discount related to item
+            var existingItemDiscount = previousCart.find(item =>
+                (item.relatedSKUForSeniorPwdDiscount === itemSelected || item.replacedSKU === itemSelected) && item.isDiscount
+            );
+
+            // check and add promo for selected item
+            const filteredDiscounts = discounts.filter(d => (d.skuDiscountType === "BUY&TAKE" || d.skuDiscountType === "REGULAR DISCOUNT") && d.relatedSKU == itemSelected);
+            for (let i = 0; i < filteredDiscounts.length; i++)
+            {
+                const discount = filteredDiscounts[i];
+                let isSeniorPwdApply = false;
+                let reusedCartId = null;
+                let discountAmount = 0;
+                let seniorDiscountCode = null;
+                let seniorDiscountCodeDesc = null;
+                let updateMyCart = false;
+
+                // check if item existing on cart and product
+                const product = products.find(p => p.sku === itemSelected);
+                const cartItem = previousCart.find(c => c.sku === itemSelected);
+                if (!product || !cartItem) continue;
+                
+                // compute current discount which ever offers higher discount
+                if(discount.skuDiscountType === "BUY&TAKE")
+                {
+                    const eligibleQty = Math.min(cartItem.qty, cartItem.maxQtyForStatutoryDiscountable);
+                    const cartOrderItemTotalPrice = eligibleQty * cartItem.pricePerKg;
+                    const cartOrderQty = cartItem.qty;
+                    const setSize = discount.buyQty + discount.takeQty;
+                    const promoSets = Math.floor(cartOrderQty / setSize);
+
+                    if (promoSets > 0)
+                    {
+                        const freeQty = discount.takeQty * promoSets;
+                        const initialAmount = (product.pricePerKg * freeQty) * (discount.amount / 100);
+                        const amountDiscount = -1 * initialAmount;
+                        const seniorPwdAmount = isSeniorPWDDiscountExist ?  getSeniorDiscount(cartOrderItemTotalPrice) : 0;
+                        const existingDiscount = previousCart.find(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+                        const existing = previousCart.find(item => item.sku === discount.discountSKU
+                            || (isSeniorPWDDiscountExist && item.relatedSKUForSeniorPwdDiscount === discount.relatedSKU));
+
+                        isSeniorPwdApply = product.isStatutoryDiscountable && isSeniorPWDDiscountExist && (Math.abs(amountDiscount) < Math.abs(seniorPwdAmount)) && (promoSets > 0);
+                        discountAmount = isSeniorPwdApply ? seniorPwdAmount : amountDiscount;
+                        reusedCartId = existing?.cartId ?? generateId();
+                        seniorDiscountCode = existingDiscount?.sku ?? null;
+                        seniorDiscountCodeDesc = seniorDiscountCode === "DISCSNR" ? "Senior Discount" : "PWD Discount";
+                        updateMyCart = true;
+                    }
+                    else
+                    {
+                        if(isSeniorPWDDiscountExist && product.isStatutoryDiscountable)
+                        {
+                            const existingDiscount = previousCart.find(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+                            const existingItem = previousCart.find(d => d.sku === product.sku);
+                            const eligibleQty = Math.min(existingItem.qty, existingItem.maxQtyForStatutoryDiscountable);
+                            const existing = previousCart.find(item => item.sku === discount.discountSKU
+                                || (isSeniorPWDDiscountExist && item.relatedSKUForSeniorPwdDiscount === discount.relatedSKU));
+
+                            isSeniorPwdApply = true;
+                            discountAmount = getSeniorDiscount(eligibleQty * existingItem.pricePerKg);
+                            reusedCartId = existing?.cartId ?? generateId();
+                            seniorDiscountCode = existingDiscount?.sku ?? null;
+                            seniorDiscountCodeDesc = seniorDiscountCode === "DISCSNR" ? "Senior Discount" : "PWD Discount";
+                            updateMyCart = true;
+                        }
+                    }
+                }
+
+                if (discount.skuDiscountType === "REGULAR DISCOUNT")
+                {
+                    const discountQty = cartItem.qty / (cartItem.stepQty || 1);
+                    const eligibleQty = Math.min(discountQty, cartItem.maxQtyForStatutoryDiscountable);
+                    const cartOrderItemTotalPrice = eligibleQty * cartItem.pricePerKg;
+                    if (discount.amountType === "percent")
+                    {
+                        const initialAmount = (cartItem.pricePerKg * discountQty) * (discount.amount / 100);
+                        const seniorPwdAmount = isSeniorPWDDiscountExist ?  getSeniorDiscount(cartOrderItemTotalPrice) : 0;
+                        const amountDiscount = -1 * initialAmount;
+                        isSeniorPwdApply = cartItem.isStatutoryDiscountable && isSeniorPWDDiscountExist && (Math.abs(amountDiscount) < Math.abs(seniorPwdAmount));
+                        discountAmount = isSeniorPwdApply ? seniorPwdAmount : amountDiscount;
+                        updateMyCart = true;
+                    }
+                    else if (discount.amountType === "amount")
+                    {
+                        const initialAmount = discount.amount * discountQty;
+                        const seniorPwdAmount = isSeniorPWDDiscountExist ? getSeniorDiscount(cartOrderItemTotalPrice) : 0;
+                        const amountDiscount = -1 * initialAmount;
+                        isSeniorPwdApply = cartItem.isStatutoryDiscountable && isSeniorPWDDiscountExist && (Math.abs(amountDiscount) < Math.abs(seniorPwdAmount));
+                        discountAmount = isSeniorPwdApply ? seniorPwdAmount : amountDiscount;
+                        updateMyCart = true;
+                    }
+
+                    const existing = previousCart.find(item => item.sku === discount.discountSKU
+                        || (isSeniorPWDDiscountExist && item.relatedSKUForSeniorPwdDiscount === discount.relatedSKU));
+                    const existingDiscount = previousCart.find(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+                    reusedCartId = existing?.cartId ?? generateId();
+                    seniorDiscountCode = existingDiscount?.sku ?? null;
+                    seniorDiscountCodeDesc = seniorDiscountCode === "DISCSNR" ? "Senior Discount" : "PWD Discount";
+                }
+
+                if (updateMyCart)
+                {
+                    const productDescription = discount.skuDiscountType === "BUY&TAKE"
+                        ? `${product.name} - BUY ${discount.buyQty} TAKE ${discount.takeQty}`
+                        : `Discount (${discount.amount}${discount.amountType === "percent" ? "%" : " off"}) - ${product.name}`;
+
+                    // Prompt customer for consent to replace existing discount.
+                    // If approved, remove the old discount and apply the new one.
+                    var newDiscount = {
+                        name: isSeniorPwdApply ? `${seniorDiscountCodeDesc} - ${product.name}` : productDescription,
+                        amount: discountAmount
+                    };
+
+                    var existingDiscount = {
+                        name: existingItemDiscount?.name,
+                        amount: existingItemDiscount?.pricePerKg
+                    };
+
+                    // FIX THIS ONE DO NOT AWAIT FOR promptChangeDiscount
+                    var isSameDiscount = existingDiscount?.name === newDiscount?.name;
+                    const promptChangeDiscountResult = (existingDiscount && newDiscount && !isSameDiscount)
+                        ? await promptChangeDiscount(itemSelected, existingDiscount, newDiscount)
+                        : true;
+
+                    if (!promptChangeDiscountResult) continue;
+
+                    // Remove existing discount from cart if it is a Senior or PWD discount,
+                    // and customer has confirmed the replacement.
+                    if (existingItemDiscount && promptChangeDiscountResult) 
+                    {
+                        const index = cart.indexOf(existingItemDiscount);
+                        if (index !== -1) 
+                        {
+                            cart.splice(index, 1);
+                        }
+                    }
+
+                    var isExistingDiscountValid = typeof existingDiscount === "object" && existingDiscount !== null && typeof existingDiscount.name === "string";
+                    // Log the discount change
+                    if (isExistingDiscountValid && !isSameDiscount)
+                    {
+                    const isStatutoryDiscount = existingDiscount?.name?.includes("Senior Discount") || existingDiscount?.name?.includes("Pwd Discount");
+                        const isConsented = (isStatutoryDiscount && promptChangeDiscountResult)
+                            ? ", with customer consent to remove statutory discount."
+                            : "";
+
+                        tempAuditLogs.push({
+                            timestamp: new Date().toISOString(),
+                            action: "Change Discount",
+                            oldDiscountType: existingDiscount || null,
+                            newDiscountType: newDiscount || null,
+                            performedBy: currentUser || "Default User",
+                            reason: discountChangeReason || null,
+                            itemsAffected: cart
+                                .filter(item => item.isRegularItem)
+                                .map(item => ({
+                                    name: item.name,
+                                    sku: item.sku,
+                                    quantity: item.quantity,
+                                    discountAmount: item.discountAmount || 0
+                                })),
+                            transactionId: currentTransactionId || null
+                        });
+                    }                    
+
+                    // Add applicable discount to cart:
+                    // - If no existing discount is applied yet
+                    // - If the existing discount is not a senior/PWD discount
+                    // - If customer provides consent to replace the existing discount with a senior/PWD discount
+                    lastUpdateCartId = reusedCartId;
+                    cart.push({
+                        cartId: reusedCartId,
+                        name: isSeniorPwdApply ? `${seniorDiscountCodeDesc} - ${product.name}` : productDescription,
+                        qty: 1,
+                        pricePerKg: `-${Math.abs(discountAmount).toFixed(2)}`,
+                        stepQty: 1,
+                        sku: isSeniorPwdApply ? seniorDiscountCode : discount.discountSKU,
+                        isDiscount: true,
+                        isDiscountRemovableOnUpdateCart: true,
+                        isSeniorDiscountAppliedToItem: isSeniorPwdApply ? true : false,
+                        isBuyTakeDiscount: !isSeniorPwdApply && discount.skuDiscountType === "BUY&TAKE",
+                        isRegularDiscountItem: !isSeniorPwdApply && discount.skuDiscountType === "REGULAR DISCOUNT",
+                        isStatutoryDiscountable: isSeniorPwdApply ? true : false,
+                        replacedSKU :isSeniorPwdApply ? discount.discountSKU : null,
+                        relatedSKUForSeniorPwdDiscount : product.sku,
+                        removeLabel: "remove discount",
+                        discountRateLabel: `-${Math.abs(discountAmount).toFixed(2)}`
+                    });
+                }                   
+            };
+
+            if (isSeniorPWDDiscountExist)
+            {
+                if (itemSelected === "DISCSNR" || itemSelected === "DISCPWD")
+                    return;
+
+                // Check if item exists in cart and has no existing discount applied
+                const itemExists = cart.filter(item => item.sku === itemSelected);
+                const discountExists = cart.find(d =>
+                    d.relatedSKUForSeniorPwdDiscount === itemSelected || d.replacedSKU === itemSelected
+                );
+
+                // discount exists must be a Senior or PWD discount or no discount/promo at all
+                var hasOnlyStatutoryDiscountOrNone = !discountExists 
+                    || (discountExists?.name?.includes("Senior Discount") || discountExists?.name?.includes("PWD Discount"));
+                itemExists.forEach(item => 
+                {
+                    // Check item must not have existing discount or promo
+                    if (hasOnlyStatutoryDiscountOrNone && item.isStatutoryDiscountable)
+                    {
+                        const existingDiscount = previousCart.find(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+                        const seniorDiscountCode = existingDiscount?.sku ?? "DISCSNR"; // fallback to DISCSNR
+                        const seniorDiscountCodeDesc = seniorDiscountCode === "DISCSNR" ? "Senior Discount" : "PWD Discount";
+
+                        // Reuse existing cartId if it exists, otherwise generate a new one
+                        const existing = previousCart.find(d => d.sku === item.sku);
+                        const reusedCartId = existing?.cartId ?? generateId();
+
+                        const discountQty = item.qty / (item.stepQty || 1);
+                        const eligibleQty = Math.min(discountQty, item.maxQtyForStatutoryDiscountable || item.qty);
+                        const discountAmount = getSeniorDiscount(eligibleQty * item.pricePerKg);
+
+                        // remove if same discount type to update quantity
+                        if(discountExists 
+                            && (discountExists?.name?.includes("Senior Discount") || discountExists?.name?.includes("PWD Discount")))
+                        {
+                            cart = cart.filter(d =>
+                                !(d.relatedSKUForSeniorPwdDiscount === itemSelected || d.replacedSKU === itemSelected)
+                            );
+                        }
+
+                        // Add new discount line
+                        lastUpdateCartId = reusedCartId;
+                        cart.push(
+                        {
+                            cartId: reusedCartId,
+                            name: `${seniorDiscountCodeDesc} - ${item.name}`,
+                            qty: 1,
+                            pricePerKg: `-${Math.abs(discountAmount).toFixed(2)}`,
+                            stepQty: 1,
+                            sku: seniorDiscountCode,
+                            isDiscount: true,
+                            isDiscountRemovableOnUpdateCart: true,
+                            isSeniorDiscountAppliedToItem: true,
+                            isBuyTakeDiscount: false,
+                            isRegularDiscountItem: false,
+                            isStatutoryDiscountable: true,
+                            replacedSKU: null,
+                            relatedSKUForSeniorPwdDiscount: item.sku,
+                            removeLabel: "remove discount",
+                            discountRateLabel: `-${Math.abs(discountAmount).toFixed(2)}`
+                        });
+                    }
+                });
+            }
+        }
+
+        // Sort before rendering
+        cart.sort((a, b) => {
+            if (a.cartId < b.cartId) return -1;
+            if (a.cartId > b.cartId) return 1;
+            return 0;
+        });
+
+        // Loop through cart items to generate HTML
+        cart.forEach((item, index) => 
+        {
+            // Check if discount is DISCSNR & PWD is available in cart
+            const isSeniorPWDDiscountExist = cart.some(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+
+            // Check which offer the highest discount normal discount vs senior/pwd discount
+            let isSeniorPWDOfferHigherDiscountPrice = false;
+            let amountDiscount = 0;
+            let seniorPwdAmount = 0;
+
+            const subtotal = item.pricePerKg * item.qty;
+            if (item.isStatutoryDiscountable && isSeniorPWDDiscountExist && item.isSeniorDiscountAppliedToItem)
+            {
+                // Promo vs Senior/Pwd Discount
+                if (item.replacedSKU)
+                {
+                    const discount = discounts.find(e => e.discountSKU === item.replacedSKU);
+                    if(discount)
+                    {
+                        // Regular Discount e.g. 20% off
+                        const itemDetails = previousCart.find(e => e.sku === discount.relatedSKU);
+                        if (discount.amountType === "percent" && discount.skuDiscountType === "REGULAR DISCOUNT")
+                        {
+                                const discountQty = itemDetails.qty / (itemDetails.stepQty || 1);
+                                const eligibleQty = Math.min(discountQty, itemDetails.maxQtyForStatutoryDiscountable);
+                                const cartOrderItemTotalPrice = eligibleQty * itemDetails.pricePerKg;
+                                const initialAmount = (itemDetails.pricePerKg * discountQty) * (discount.amount / 100);
+                                seniorPwdAmount = isSeniorPWDDiscountExist ?  getSeniorDiscount(cartOrderItemTotalPrice) : 0;
+                                amountDiscount = Math.abs(initialAmount);
+                                isSeniorPWDOfferHigherDiscountPrice = isSeniorPWDDiscountExist && (Math.abs(amountDiscount) < Math.abs(seniorPwdAmount));
+
+                        }
+                        // Regular Discount e.g. P10.00 off
+                        else if (discount.amountType === "amount" && discount.skuDiscountType === "REGULAR DISCOUNT")
+                        {
+                                const discountQty = itemDetails.qty / (itemDetails.stepQty || 1);
+                                const eligibleQty = Math.min(discountQty, itemDetails.maxQtyForStatutoryDiscountable);
+                                const cartOrderItemTotalPrice = eligibleQty * itemDetails.pricePerKg;
+                                const initialAmount = discount.amount * discountQty;
+                                seniorPwdAmount = isSeniorPWDDiscountExist
+                                    ? getSeniorDiscount(cartOrderItemTotalPrice)
+                                    : 0;
+                                amountDiscount = Math.abs(initialAmount);
+                                isSeniorPWDOfferHigherDiscountPrice = isSeniorPWDDiscountExist && (Math.abs(amountDiscount) < Math.abs(seniorPwdAmount));
+                        }
+                        // Buy&Take e.g. Buy 1 Take 1
+                        else if (discount.skuDiscountType === "BUY&TAKE")
+                        {
+                            const eligibleQty = Math.min(itemDetails.qty, itemDetails.maxQtyForStatutoryDiscountable);
+                            const cartOrderItemTotalPrice = eligibleQty * itemDetails.pricePerKg;
+                            const cartOrderQty = itemDetails.qty;
+                            const setSize = discount.buyQty + discount.takeQty;
+                            const promoSets = Math.floor(cartOrderQty / setSize);
+
+                            if (promoSets > 0)
+                            {
+                                const freeQty = discount.takeQty * promoSets;
+                                const initialAmount = (itemDetails.pricePerKg * freeQty) * (discount.amount / 100);
+                                amountDiscount = Math.abs(initialAmount);
+                                seniorPwdAmount = isSeniorPWDDiscountExist ?  getSeniorDiscount(cartOrderItemTotalPrice) : 0;
+                                isSeniorPWDOfferHigherDiscountPrice = isSeniorPWDDiscountExist && (Math.abs(amountDiscount) < Math.abs(seniorPwdAmount));
+                         
+                            }
+                        }
+
+                        // Compute amounts sub total
+                        if (itemDetails.isStatutoryDiscountable && isSeniorPWDDiscountExist && isSeniorPWDOfferHigherDiscountPrice)
+                        {
+                            const maxStatutoryQty = itemDetails.maxQtyForStatutoryDiscountable ?? 0;
+                            const discountedQty = Math.min(itemDetails.qty, maxStatutoryQty);
+                            const nonDiscountedQty = itemDetails.qty - discountedQty;
+
+                            statutoryAmountTotal += itemDetails.pricePerKg * discountedQty;
+                        }
+                        else if (item.isDiscount && (item.isBuyTakeDiscount || item.isRegularDiscountItem))
+                        {
+                            normalDiscountTotal += subtotal;
+                        }
+                        else if (item.isRegularItem)
+                        {
+                            grossTotal += subtotal;
+                        }
+                    }
+                }
+                else
+                {
+                    // Item with Senior/Pwd Discount without any Promo
+                    var itemRelated = previousCart.find(e => e.sku === item.relatedSKUForSeniorPwdDiscount);
+                    if (itemRelated.isStatutoryDiscountable && isSeniorPWDDiscountExist)
+                    {
+                        const maxStatutoryQty = itemRelated.maxQtyForStatutoryDiscountable ?? 0;
+                        const discountedQty = Math.min(itemRelated.qty, maxStatutoryQty);
+                        const nonDiscountedQty = itemRelated.qty - discountedQty;
+
+                        statutoryAmountTotal += itemRelated.pricePerKg * discountedQty;
+                    }
+                }                
+            }
+            else
+            {
+                if (item.isStatutoryDiscountable && isSeniorPWDDiscountExist && item.isSeniorDiscountAppliedToItem && !isSeniorPWDOfferHigherDiscountPrice)
+                {
+                    const maxStatutoryQty = item.maxQtyForStatutoryDiscountable ?? 0;
+                    const discountedQty = Math.min(item.qty, maxStatutoryQty);
+
+                    statutoryAmountTotal += item.pricePerKg * discountedQty;
+                }
+                else if (item.isDiscount && (item.isBuyTakeDiscount || item.isRegularDiscountItem))
+                {
+                    normalDiscountTotal += subtotal;
+                }
+                else if (item.isRegularItem)
+                {
+                    grossTotal += subtotal;
+                }
+            }
+            
+            // --- Render Cart & Calculate Totals ---
+            const quantity = item.qty / item.stepQty;
+            const itemNameClass = (item.isDiscount)
+                ? "text-red-500 font-semibold text-sm"
+                : "text-black text-sm";
+                
+            const quantityControl = item.isDiscount
+            ? `<button class="text-gray-500 hover:text-black text-[10px] underline"
+                data-index="${index}"
+                onclick="removeDiscount(this)">
+                    Remove Discount
+                </button>`
+            : `<button class="text-sm font-bold text-white px-2 py-1 rounded bg-orange"
+                        onclick="changeQty(${item.cartId}, -1)">−</button>
+                <span class="w-6 text-center text-sm font-bold text-gray-900">${quantity}</span>
+                <button class="text-sm font-bold text-white px-2 py-1 rounded bg-customize"
+                        onclick="changeQty(${item.cartId}, 1)">+</button>`;
+            let skuDisplay = item.sku?.startsWith("SKU") ? `#${item.sku} - ` : "";
+
+            cartHtml += `
+                <div class="ml-2 grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 items-center py-1.5 border-b text-sm" data-cart-id="${item.cartId}">
+                    <div class="${itemNameClass} leading-tight">${skuDisplay} ${item.name}</div>
+                    <div class="flex justify-center items-center gap-1">${quantityControl}</div>
+                    <div class="text-right font-semibold text-sm ${itemNameClass}">₱${subtotal.toFixed(2)}</div>
+                </div>`;
+
+        });
+        // --- Final Totals ---        
+        // Statutory amount is subject to senior/PWD discount and VAT exemption
+        const statutoryAmountLessVAT = statutoryAmountTotal > 0 ? getVatFromVatInclusiveItem(statutoryAmountTotal) : 0; // remove VAT
+        const seniorDiscount = statutoryAmountLessVAT > 0 ? statutoryAmountLessVAT * 0.20 : 0;
+
+        // For the remaining non-statutory items (vatable), extract VAT portion from gross
+        const vatableAmount = grossTotal - statutoryAmountTotal;
+        const vatIncluded = vatableAmount * (12 / 112); // extract VAT from vatable items
+
+        // VAT-exempt amount is just the VAT part of statutoryAmountTotal
+        const vatExempted = statutoryAmountTotal - statutoryAmountLessVAT;
+
+        // Net total = gross - senior discount - normal discounts
+        const netTotal = grossTotal - Math.abs(seniorDiscount) - Math.abs(normalDiscountTotal);
+
+        // --- Update UI ---
+        $('#cart-items').html(cartHtml);
+        $('#subtotal').text(`₱${grossTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+        $('#regular-discount').text(`- ₱${Math.abs(normalDiscountTotal).toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+        $('#senior-discount').text(`- ₱${Math.abs(seniorDiscount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+        $('#vatIncluded').text(`₱${vatIncluded.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+        $('#vatExcluded').text(`₱${vatExempted.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+        $('#total-amount').text(`₱${netTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);        
+
+        ScrollToCartItem(lastUpdateCartId || null);
+    }
+
+    function ScrollToCartItem(cartId) {
+        const cartElement = document.getElementById('cart-items');
+
+        if (!cartElement) return;
+
+        // Try to scroll to the specific cart item by cartId
+        const itemElement = document.querySelector(`[data-cart-id="${cartId}"]`);
+
+        if (itemElement) {
+            // Scroll the specific item into view smoothly
+            itemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+            // If item not found, fallback to scrolling to bottom
+            cartElement.scrollTop = cartElement.scrollHeight;
+        }
+    }
+
+    async function removeDiscount(button) {
+        const index = parseInt(button.getAttribute("data-index"));
+        const item = cart[index];
+
+        if (!item) return;
+
+        // Prompt for consent if Statutory Discount discount is being removed
+        if(item?.name.includes("Statutory Discount Applied"))
+        {
+            const hasStatutoryDiscounts = cart.some(item =>
+                item.name?.includes("Senior Discount") ||
+                item.name?.includes("PWD Discount")
+            );
+
+            // Remove the statutory discount from cart
+            if (!hasStatutoryDiscounts)
+            {
+                cart.splice(index, 1);
+                updateCart(null);
+                return;
+            }
+
+            // user canceled do not do anything
+            const promptChangeDiscountResult = await promptRemoveAllSeniorDiscounts();
+            if (!promptChangeDiscountResult) return;
+
+            // if user agree
+            // Remove the statutory discount from cart
+            // remove all non regular item
+            // recompute discounts
+
+            // update this to filter itemsAffected to return only items that applies senior/pwd discount
+            tempAuditLogs.push({
+                timestamp: new Date().toISOString(),
+                action: "Statutory Discount Removed",
+                oldDiscountType: null,
+                newDiscountType: null,
+                performedBy: currentUser || "Unknown",
+                reason: discountChangeReason || null,
+                itemsAffected: cart
+                    .filter(item => item.isRegularItem)
+                    .map(item => ({
+                        name: item.name,
+                        sku: item.sku,
+                        quantity: item.quantity,
+                        discountAmount: item.discountAmount || 0
+                    })),
+                transactionId: currentTransactionId || null
+            });
+
+            cart.splice(index, 1);
+            updateCart(null);
+
+            cart = cart.filter(item => item.isRegularItem);
+            updateCart(null);
+
+            cart
+            .filter(d => d.isRegularItem)
+            .forEach(d => {
+                updateCart(d.sku || null);
+            });
+
+            return;
+        }
+
+        // log to audit logs remove discounts
+        var relatedItem = cart.find(d => d.sku === item.relatedSKUForSeniorPwdDiscount);
+
+        // prompt first if item is senior or pwd discount then proceed to logging
+        if(item.name.includes("Senior Discount") || item.name.includes("PWD Discount"))
+        {
+            const promptChangeDiscountResult = await promptManualRemovalOfStatutoryDiscount(item);
+            if (!promptChangeDiscountResult) return;
+        }
+        
+        if(relatedItem)
+        {
+            discountChangeReason = `Discount manually removed for item, ${ relatedItem.name }`;
+            tempAuditLogs.push({
+                timestamp: new Date().toISOString(),
+                action: "Discount manually removed",
+                oldDiscountType: item,
+                newDiscountType: null,
+                performedBy: currentUser || "Unknown",
+                reason: discountChangeReason || null,
+                itemsAffected: cart
+                    .filter(item => item.isRegularItem)
+                    .map(item => ({
+                        name: relatedItem.name,
+                        sku: relatedItem.sku,
+                        quantity: relatedItem.quantity,
+                        discountAmount: item.discountAmount || 0
+                    })),
+                transactionId: currentTransactionId || null
+            });
+        }
+
+        // Remove the item from cart
+        cart.splice(index, 1);
+
+        // Render cart changes first before removing all senior/pwd discounts
+        updateCart(null);
+    }
+
+    function changeQty(cartId, delta) {
+        const item = cart.find(c => c.cartId === cartId);
+        if (!item) return;
+
+        if (!item.stepQty) item.stepQty = item.qty;
+        
+        item.qty += item.stepQty * delta;
+
+        if (item.qty <= 0) {
+            const indexToRemove = cart.findIndex(c => c.cartId === cartId);
+            if (indexToRemove > -1) cart.splice(indexToRemove, 1);
+        }
+        
+        // remove all discounts releated to that product
+        if (item.qty <= 0 && item.sku !== "DISCSNR" && item.sku !== "DISCPWD")
+        {
+            cart = cart.filter(d => !(d.relatedSKUForSeniorPwdDiscount === item.sku || d.replacedSKU === item.sku));
+            showToast(`${item.name} was removed from cart along all related discounts.`, "warning")
+        }
+
+        updateCart(item.sku);
+          const totalItems = cart
+            .filter(item => item.isRegularItem) // Only include regular items
+            .reduce((sum, c) => sum + (c.qty / c.stepQty), 0);
+
+
+        // verify if Buy&Take Promo is eligible && Statutory Discount is not on Cart
+        if(delta === -1)
+        {
+            var checkItemStillInCart = cart.some(d => d.sku === item.sku && d.isRegularItem);
+            if(checkItemStillInCart)
+            {
+                var relatedDiscountToItem = cart.find(d => d.relatedSKUForSeniorPwdDiscount === item.sku && !d.isRegularItem);
+                var isStatutoryDiscountExists = cart.some(item => (item.sku === "DISCSNR" || item.sku === "DISCPWD") && item.name === "Statutory Discount Applied");
+                if(!isStatutoryDiscountExists && relatedDiscountToItem)
+                {
+                    var promo = discounts.find(d => d.discountSKU === relatedDiscountToItem.sku);
+                    if(promo != null && promo.skuDiscountType === "BUY&TAKE")
+                    {
+                        const setSize = promo.buyQty + promo.takeQty;
+                        const promoSets = Math.floor(item.qty / setSize);
+                        if (promoSets <= 0)
+                        {
+                            cart = cart.filter(d => !(d.sku === relatedDiscountToItem.sku && d.relatedSKUForSeniorPwdDiscount === item.sku));
+                            updateCart(null);
+                        }
+                    }
+                }
+            }
+        }
+
+        $('#cart-count').text(Math.round(totalItems));
+        checkIfCartIsEmpty();
+    }
+
+    function formatCurrency(value) {
+        return '₱ ' + value.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function checkIfCartIsEmpty() {
+        if ($('#cart-items').children().length === 1) {
+            lastCartId = 0; // reset the counter
+            lastUpdateCartId = 0;
+            $('#cart-items').html(`
+                <div id="empty-cart-message" class="text-gray-500 text-center italic">
+                    No items added yet.
+                </div>
+            `);
+        }
+    }
+
+    function getTotalAmount() {
+        const rawText = $('#total-amount').text();
+        const numericValue = parseFloat(
+            rawText.replace(/[^\d.]/g, '') // remove ₱ and non-numeric characters
+        ) || 0;
+        return numericValue;
+    }
+
+    function openModal() {
+        $('#paymentModal').removeClass('hidden');
+    }
+
+    function closeModal() {
+        $('#paymentModal').addClass('hidden');
+    }
+
+    function parsePeso(str) {
+        return parseFloat(str.replace(/[₱, ]/g, '').trim()) || 0;
+    }
+
+    function showToast(message, type = 'info') {
+        let bgColor = 'bg-orange-500';
+
+        // You can still support other types if needed
+        if (type === 'success') bgColor = 'bg-green-500';
+        else if (type === 'error') bgColor = 'bg-red-500';
+        else if (type === 'warning') bgColor = 'bg-yellow-500';
+        else if (type === 'info') bgColor = 'bg-orange-500';
+
+        const toast = $(`
+            <div class="toast px-4 py-2 rounded text-white shadow-md ${bgColor} animate-fade-in-out">
+                ${message}
+            </div>
+        `);
+
+        $('#toast-container').append(toast);
+
+        const fadeTimeout =  type === "error" ? 5000 : 300;
+        setTimeout(() => {
+            toast.fadeOut(fadeTimeout, function () {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    function updateCashChange() {
+        const totalAmount = getTotalAmount(); // 💡 always fetch latest
+        const received = parseFloat($('#cashAmount').val());
+
+        if (!isNaN(received)) {
+            const change = (received - totalAmount).toFixed(2);
+            $('#cashChange').text(`₱${change}`);
+        } else {
+            $('#cashChange').text('₱0.00');
+        }
+    }
+    
+    function showConfirmationModal(message, callback) {
+            $("#confirmationModalText").text(message);
+            $("#confirmationModal").removeClass("hidden");
+
+            $("#approveModalBtn").off("click").on("click", function () {
+                $("#confirmationModal").addClass("hidden");
+                callback(true);
+            });
+
+            $("#cancelModalBtn").off("click").on("click", function () {
+                $("#confirmationModal").addClass("hidden");
+                callback(false);
+            });
+        }
+            
+    $(document).ready(function () {
+        refreshPOSData();
+        //clear array on load
+        tempAuditLogs.length = 0;
+        $('#profile-tool-tip').text(`Hi, ${currentUser}!`);
+        // Toggle sections
+        $('#radioCash').on('change', function () {
+            $('#cashSection').show();
+            $('#gcashSection').hide();
+        });
+
+        $('#radioGcash').on('change', function () {
+            $('#gcashSection').show();
+            $('#cashSection').hide();
+        });
+
+        $('#printReceiptBtn').on('click', function () {
+            // Simulate print action
+            const receiptText = formatReceipt(cart, {
+                businessName: "Anjey's Pet Supplies",
+                businessAddress: "BLK 16, San Jose Del Monte Heights, Muzon East",
+                tin: "123-456-789-000",
+                permitNumber: "2025-001234",
+                cashier: `Cashier: ${currentUser}` ,
+                orNumber: `${currentTransactionId}`
+            });
+            console.log(receiptText);
+            showToast("Receipt has been printed successfully.", "success");
+
+            // disable input fields after clicking print button
+            if ($('#radioCash').is(':checked')) {
+                $('#cashAmount')
+                    .attr('disabled', true)
+                    .addClass('opacity-50 cursor-not-allowed');
+            }
+
+            if ($('#radioGcash').is(':checked')) {
+                $('#gcashAmount')
+                    .attr('disabled', true)
+                    .addClass('opacity-50 cursor-not-allowed');
+
+                $('#gcashReference')
+                    .attr('disabled', true)
+                    .addClass('opacity-50 cursor-not-allowed');
+            }
+
+            // remove disable on Complete Transaction button after printing receipt
+            receiptPrinted = true;
+            $('#completeTransactionBtn')
+                .removeAttr('disabled')
+                .removeClass('opacity-50 cursor-not-allowed');
+        });
+
+        $('#completeTransactionBtn').on('click', function () {
+
+            // Merge temp logs into audit logs
+            auditLogs.push(...tempAuditLogs);
+
+            // Read values from HTML
+            const subtotal = parseCurrency($('#subtotal').text());
+            const regularDiscount = parseCurrency($('#regular-discount').text());
+            const statutoryDiscount = parseCurrency($('#senior-discount').text());
+            const vatIncludedVal = parseCurrency($('#vatIncluded').text());
+            const vatExcludedVal = parseCurrency($('#vatExcluded').text());
+            const totalAmountVal = parseCurrency($('#total-amount').text());
+            const amountTenderedVal = parseCurrency($('#cashAmount').val() || parseCurrency($('#gcashAmount').val()));
+            const changeAmountVal = parseCurrency($('#cashChange').text() || '0');
+            const cashierNameVal = currentUser || '';
+            const terminalIdVal = terminalId || '';
+            const paymentMethod = $('#radioCash').is(':checked') ? 'Cash' : 'GCash';
+
+            // Build payload
+            const payload = {
+                Header: {
+                    ORNumber: currentTransactionId  || null,
+                    TransactionDate: new Date().toISOString(),
+                    PaymentMethod: paymentMethod,
+                    RegularDiscount: regularDiscount || '0',
+                    StatutoryDiscount: statutoryDiscount || '0',
+                    VATIncluded: vatIncludedVal || '0',
+                    VATExcluded: vatExcludedVal || '0',
+                    TotalAmount: totalAmountVal || '0',
+                    AmountTendered: amountTenderedVal || '0',
+                    ChangeAmount: changeAmountVal || '0',
+                    CashierName: cashierNameVal,
+                    TerminalId: terminalIdVal,
+                    Cart: JSON.stringify(cart)
+                },
+                Cart: cart.map(item => ({
+                    Name: item.name || '',
+                    Qty: item.qty || 0,
+                    PricePerKg: item.pricePerKg || 0,
+                    StepQty: item.stepQty || 0,
+                    Sku: item.sku || '',
+                    IsDiscount: item.isDiscount ?? false,
+                    IsRegularItem: item.isRegularItem ?? false,
+                    IsStatutoryDiscountable: item.isStatutoryDiscountable ?? false,
+                    IsDiscountRemovableOnUpdateCart: item.isDiscountRemovableOnUpdateCart ?? false,
+                    IsSeniorDiscountAppliedToItem: item.isSeniorDiscountAppliedToItem ?? false,
+                    IsBuyTakeDiscount: item.isBuyTakeDiscount ?? false,
+                    IsRegularDiscountItem: item.isRegularDiscountItem ?? false,
+                    MaxQtyForStatutoryDiscountable: item.maxQtyForStatutoryDiscountable || null,
+                    ReplacedSKU: item.replacedSKU || '',
+                    RelatedSKUForSeniorPwdDiscount: item.relatedSKUForSeniorPwdDiscount || '',
+                    RemoveLabel: item.removeLabel || '',
+                    DiscountRateLabel: item.discountRateLabel || ''
+                })),
+                AuditLogs: auditLogs.map(auditlog => ({
+                    Timestamp: auditlog.timestamp,
+                    Action: auditlog.action,
+                    OldDiscountType: auditlog.oldDiscountType ? {
+                        Name: auditlog.oldDiscountType.name,
+                        Amount: auditlog.oldDiscountType.amount
+                    } : null,
+                    NewDiscountType: auditlog.newDiscountType ? {
+                        Name: auditlog.newDiscountType.name,
+                        Amount: auditlog.newDiscountType.amount
+                    } : null,
+                    PerformedBy: auditlog.performedBy,
+                    Reason: auditlog.reason,
+                    TransactionId: auditlog.transactionId,
+                    ItemsAffected: auditlog.itemsAffected ? auditlog.itemsAffected.map(item => ({
+                        Name: item.name || '',
+                        Sku: item.sku || '',
+                        DiscountAmount: item.discountAmount || 0
+                    })) : []
+                }))
+            };
+
+            // Post to backend
+            $.ajax({
+                url: '/POS/CompleteTransaction',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (response) {
+                    if (response.success) {
+                        showToast(`Transaction Complete (${currentTransactionId})`, "success");
+
+                        // Reset UI
+                        setToDefault();
+                        $('#clear-cart').trigger('click');
+                        currentTransactionId = null;
+                        refreshPOSData();
+                    }
+                },
+                error: function (xhr) {
+                    let errorMsg = "Error saving transaction. Please try again.";
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    showToast(errorMsg, "error");
+                }
+            });
+        });
+
+        function refreshPOSData() {
+
+                var statutoryDiscounts = [
+                {
+                    discountSKU: "DISCSNR",
+                    amount: 0.20,
+                    amountType: null,
+                    buyQty: 0,
+                    takeQty: 0,
+                    name: "Senior Citizen Discount Applied",
+                    relatedSKU: null,
+                    skuDiscountType: "STATUTORY",
+                },
+                {
+                    discountSKU: "DISCPWD",
+                    amount: 0.20,
+                    amountType: null,
+                    buyQty: 0,
+                    takeQty: 0,
+                    name: "PWD Discount Applied",
+                    relatedSKU: null,
+                    skuDiscountType: "STATUTORY",
+                }
+            ];
+
+            // 🔹 Refresh Products
+            $.getJSON('/POS/GetProducts')
+                .done(function (data) {
+                    if (data && data.success && Array.isArray(data.products)) {
+                        products.length = 0; // clear existing array
+                        products.push(...data.products); // spread push new data
+                        updateProductUI(products); // re-render UI
+                    } else {
+                        console.log("Failed to load products or invalid response format.");
+                    }
+                })
+                .fail(function (xhr, status, error) {
+                    console.log("Error fetching products:", error);
+                });
+
+            // 🔹 Refresh Discounts
+            $.getJSON('/POS/GetDiscounts')
+                .done(function (data) {
+                    if (data && data.success && Array.isArray(data.discounts)) {
+                        discounts.length = 0; // clear existing array
+                        discounts.push(...data.discounts); // spread push new data
+                        discounts.push(...statutoryDiscounts);
+                    } else {
+                        console.warn("Failed to load discounts or invalid response format.");
+                    }
+                })
+                .fail(function (xhr, status, error) {
+                    console.error("Error fetching discounts:", error);
+                });
+
+        }
+
+        // Re-render product UI
+        function updateProductUI(products) {
+            let container = $("#product-grid");
+            container.empty();
+
+            products.forEach(p => {
+                container.append(`
+                    <div class="product-card bg-white rounded-lg shadow-md text-center p-4 hover:shadow-lg transition cursor-pointer open-modal"
+                         data-name="${p.name}"
+                         data-sku="${p.sku}"
+                         data-priceperkg="${p.pricePerKg}"
+                         data-image="/images/${p.imageUrl}"
+                         data-search="${p.name.toLowerCase()}"
+                         data-isstatutorydiscountable="${p.isStatutoryDiscountable}"
+                         data-maxqtyforstatutorydiscountable="${p.maxQtyForStatutoryDiscountable}">
+
+                        <img src="/images/${p.imageUrl}" alt="${p.name}" class="mx-auto h-40 object-contain mb-1" />
+
+                        <h3 class="font-semibold text-base text-gray-800 mb-1" style="word-wrap: break-word;">${p.name}</h3>
+
+                        <p class="text-sm text-gray-500 font-mono mb-1">SKU: ${p.sku}</p>
+                    </div>
+                `);
+            });
+        }
+
+        function parseCurrency(text) {
+            return parseFloat(
+                text.replace(/[^0-9.-]+/g, '') // keep only digits, dot, minus
+            ) || 0;
+        }
+
+        // Optional: reset receiptPrinted if modal is closed
+        $('#cancelPayment').on('click', function () {
+            receiptPrinted = false;
+            setToDefault();
+        });
+
+        // Trigger validation on both inputs
+        $('#gcashAmount, #gcashReference').on('input', validateGcashPayment);
+
+        // Optional: Trigger validation when the GCash radio is selected
+        $('#radioGcash').on('change', validateGcashPayment);
+
+        $('#cashAmount').on('input', function () {
+            if ($('#radioCash').is(':checked')) {
+                // Get the total due and remove ₱, commas, and extra spaces
+                const totalDueText = $('#total-amount').text().replace(/[₱,\s]/g, '');
+                const totalDue = parseFloat(totalDueText) || 0;
+
+                // Get cash received
+                const received = parseFloat($(this).val()) || 0;
+
+                // Calculate change
+                const change = Math.max(received - totalDue, 0);
+                $('#cashChange').text(`₱${change.toFixed(2)}`);
+
+                // Enable/disable print button
+                if (received < totalDue) {
+                    $('#printReceiptBtn')
+                        .attr('disabled', true)
+                        .addClass('opacity-50 cursor-not-allowed');
+                } else {
+                    $('#printReceiptBtn')
+                        .removeAttr('disabled')
+                        .removeClass('opacity-50 cursor-not-allowed');
+                }
+            }
+        });
+
+        $("#sidebarHomeBtn").on("click", function () {
+            window.location.href = "/POS/TransactionList";
+        });
+
+
+        $('#sidebarNewTransactionBtn').on('click', function () {
+            showConfirmationModal("Start a new transaction? This will clear the cart.", function (confirmed) {
+                if (confirmed) {
+                    tempAuditLogs.length = 0;
+                    $('#clear-cart').trigger('click');
+                    $('#product-search').val('').focus();
+                }
+            });
+        });
+
+        $('#sidebarSearchBtn').on('click', function () {
+            $('#product-search').focus();
+
+        });
+
+        // add item to cart list
+        $(document).on('click', '.product-card', function () {
+            const name = $(this).data('name');
+            const pricePerKg = parseFloat($(this).data('priceperkg'));
+            const stepQty = parseFloat($(this).data('qty')) || 1;
+            const sku = $(this).data('sku') || 'N/A';
+            const maxQtyForStatutoryDiscountable = parseFloat($(this).data('maxqtyforstatutorydiscountable')) || 1;
+            const isStatutoryDiscountable = ($(this).data('isstatutorydiscountable') === true || $(this).data('isstatutorydiscountable') === "True");
+            const existing = cart.find(item =>
+                item.name === name &&
+                item.stepQty === stepQty &&
+                item.pricePerKg === pricePerKg
+            );
+
+            let newId = generateId();
+            lastUpdateCartId = newId;
+            if (existing) {
+                existing.qty += stepQty;
+            } else {
+                cart.push({
+                    cartId: newId,name, qty: stepQty, pricePerKg, stepQty, sku, isStatutoryDiscountable, isRegularItem : true, isDiscountRemovableOnUpdateCart: false, maxQtyForStatutoryDiscountable });
+            }
+
+            updateCart($(this).data('sku') || null);
+            const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+            $('#cart-count').text(totalQty);
+        });
+
+        // clear cart items
+        $('#clear-cart').on('click', function () {
+            cart = [];
+            tempAuditLogs.length = 0;
+            updateCart(null);
+            $('#cart-count').text('0');
+            checkIfCartIsEmpty();
+            lastUpdateCartId = 0;
+            tempAuditLogs.length = 0;
+        });
+
+        // filter item on list
+        $('#product-search').on('keyup', function () {
+            let input = $(this).val().trim().toLowerCase();
+            let quantity = 1; // default quantity
+            let searchItem = input;
+
+            // Check if input has quantity format like "4*Product Name"
+            const qtyMatch = input.match(/^(\d+)\*(.+)$/);
+            if (qtyMatch) {
+                quantity = parseInt(qtyMatch[1], 10);
+                searchItem = qtyMatch[2].trim();
+            }
+
+            $('.product-card').each(function () {
+                const name = $(this).data('name')?.toLowerCase() || '';
+                const sku = $(this).data('sku')?.toLowerCase() || '';
+
+                const matches = name.includes(searchItem) || sku.includes(searchItem);
+                $(this).toggle(matches);
+            });
+        });
+
+        $('#payButton').on('click', function () {
+            const value = parsePeso($('#total-amount').text());
+            if (value > 0) {
+                openModal();
+
+                $('#printReceiptBtn')
+                    .attr('disabled', true)
+                    .addClass('opacity-50 cursor-not-allowed');
+            } else {
+                showToast("Your cart is empty.", "warning");
+            }
+        });
+
+        // Search for SKU or Discount Code
+        $('#product-search').on('keydown', function (e) {
+            if (e.key !== 'Enter') return; // Only run when pressing Enter
+
+            let input = $(this).val().trim().toLowerCase();
+            let insertQuantity = 1; // default quantity
+            let query = input;
+
+            // Check if input has quantity format like "4*Product Name"
+            const qtyMatch = input.match(/^(\d+)\*(.+)$/);
+            if (qtyMatch) {
+                insertQuantity = parseInt(qtyMatch[1], 10);
+                query = qtyMatch[2].trim();
+            }
+
+            let isMatched = false;
+
+            for (let i = 0; i < insertQuantity; i++) {
+                setTimeout(() => {
+                    const matched = addItemToCartFromProductSearch(query, this);
+                    if (matched) {
+                        isMatched = true;
+                        updateCart(null); // Only update if something was found
+                    }
+
+                    // After last iteration, clear input if matched
+                    if (i === insertQuantity - 1 && isMatched) {
+                        $(this).val('');
+                    }
+                }, i * 100); // 100ms delay between each add
+            }
+        });
+
+        function addItemToCartFromProductSearch(query, inputElem) {
+            let found = false; // Track if we matched something
+
+            // 🔍 Check if input is a discount SKU
+            const discount = discounts.find(d => d.discountSKU.toLowerCase() === query);
+            if (discount) {
+                found = true;
+                // SENIOR / PWD Discounts
+                if (discount.skuDiscountType === "STATUTORY") {
+                    // Check if either DISCSNR or DISCPWD already exists
+                    const hasStatutoryDiscount = cart.some(item =>
+                        (item.sku === "DISCSNR" || item.sku === "DISCPWD") &&
+                        item.name === "Statutory Discount Applied"
+                    );
+
+                    if ((discount.discountSKU === "DISCSNR" || discount.discountSKU === "DISCPWD") && !hasStatutoryDiscount) {
+                        let newId = generateId();
+                        lastUpdateCartId = newId;
+                        const discountItem = {
+                            cartId: newId,
+                            name: "Statutory Discount Applied",
+                            qty: 1,
+                            pricePerKg: 0,
+                            stepQty: 1,
+                            sku: discount.discountSKU,
+                            isDiscount: true,
+                            isDiscountRemovableOnUpdateCart: false,
+                            isBuyTakeDiscount: false,
+                            isRegularDiscountItem: false,
+                            maxQtyForStatutoryDiscountable: 0,
+                            removeLabel: "remove discount",
+                            discountRateLabel: `${discount.amount}%`
+                        };
+                        cart.push(discountItem);
+
+                        // Update all regular items in cart
+                        cart.filter(item => item.isRegularItem)
+                            .forEach(item => updateCart(item.sku || null));
+                    } else {
+                        showToast("A statutory discount is already applied to the cart.", "warning");
+                    }
+                    return true; // Found discount
+                }
+            }
+
+            // 🔍 Otherwise search for normal SKU
+            let matchedCard = null;
+            $('.product-card').each(function () {
+                const sku = $(this).data('sku')?.toLowerCase() || '';
+                if (sku === query) {
+                    found = true;
+                    matchedCard = $(this);
+                    return false; // break loop
+                }
+            });
+
+            if (matchedCard) {
+                const name = matchedCard.data('name');
+                const pricePerKg = parseFloat(matchedCard.data('priceperkg'));
+                const stepQty = parseFloat(matchedCard.data('qty')) || 1;
+                const sku = matchedCard.data('sku');
+                const maxQtyForStatutoryDiscountable = parseFloat(matchedCard.data('maxqtyforstatutorydiscountable')) || 1;
+                const isStatutoryDiscountable =
+                    matchedCard.data('isstatutorydiscountable') === true ||
+                    matchedCard.data('isstatutorydiscountable') === "True";
+
+                const existing = cart.find(item =>
+                    item.name === name &&
+                    item.pricePerKg === pricePerKg &&
+                    item.stepQty === stepQty
+                );
+
+                let newId = generateId();
+                lastUpdateCartId = newId;
+
+                if (existing) {
+                    existing.qty += stepQty;
+                } else {
+                    cart.push({
+                        cartId: newId,
+                        name,
+                        qty: stepQty,
+                        pricePerKg,
+                        stepQty,
+                        sku,
+                        isRegularItem: true,
+                        isDiscountRemovableOnUpdateCart: false,
+                        isStatutoryDiscountable,
+                        maxQtyForStatutoryDiscountable
+                    });
+                }
+
+                updateCart(matchedCard.data('sku') || null);
+                const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+                $('#cart-count').text(totalQty);
+            }
+
+            return found; // Will be false if nothing matched
+        }
+    });
+        
+</script>
+

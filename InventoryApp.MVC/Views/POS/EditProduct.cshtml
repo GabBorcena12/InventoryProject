@@ -1,0 +1,99 @@
+﻿@model InventoryApp.Core.Models.PosModels.Product
+
+@{
+    ViewData["Title"] = "Edit Product";
+}
+
+<div class="container-fluid m-4">
+    <h2>@ViewData["Title"]</h2>
+
+    <form asp-action="EditProduct" method="post" class="row g-3 needs-validation">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="id" />
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" readonly />
+            <small class="form-text text-muted">Product name cannot be changed.</small>
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="Sku" class="form-label"></label>
+            <input asp-for="Sku" class="form-control" readonly />
+            <small class="form-text text-muted">Stock Keeping Unit (SKU) is fixed.</small>
+            <span asp-validation-for="Sku" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="PricePerKg" class="form-label"></label>
+            <input asp-for="PricePerKg" class="form-control" readonly />
+            <small class="form-text text-muted">This is the set selling price per kilogram.</small>
+            <span asp-validation-for="PricePerKg" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="QtyDisplayed" class="form-label"></label>
+            <input asp-for="QtyDisplayed" class="form-control" readonly />
+            <small class="form-text text-muted">Number of units currently displayed in POS.</small>
+            <span asp-validation-for="QtyDisplayed" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="QtySold" class="form-label"></label>
+            <input asp-for="QtySold" class="form-control" readonly />
+            <small class="form-text text-muted">Total sold quantity recorded in POS.</small>
+            <span asp-validation-for="QtySold" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="ImageUrl" class="form-label"></label>
+            <input asp-for="ImageUrl" class="form-control" />
+            <small class="form-text text-muted">Enter the image filename or full URL.</small>
+            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+        </div>
+
+        <div class="form-group col-12 col-md-6 form-check">
+            <input asp-for="IsStatutoryDiscountable" class="form-check-input" />
+            <label asp-for="IsStatutoryDiscountable" class="form-check-label"></label>
+            <small class="form-text text-muted">Tick if product is eligible for statutory discounts (e.g., Senior/PWD).</small>
+        </div>
+
+        <div class="form-group col-12 col-md-6" id="maxQtyGroup">
+            <label asp-for="maxQtyForStatutoryDiscountable" class="form-label"></label>
+            <input asp-for="maxQtyForStatutoryDiscountable" class="form-control" />
+            <small class="form-text text-muted">Maximum quantity eligible for statutory discount.</small>
+            <span asp-validation-for="maxQtyForStatutoryDiscountable" class="text-danger"></span>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <a asp-action="Productlist" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Update Product</button>
+        </div>
+    </form>
+</div>
+    
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            function toggleMaxQtyField() {
+                if ($("#IsStatutoryDiscountable").is(":checked")) {
+                    $("#maxQtyGroup").show();
+                } else {
+                    $("#maxQtyGroup").hide();
+                }
+            }
+
+            // Run on page load
+            toggleMaxQtyField();
+
+            // Run when checkbox changes
+            $("#IsStatutoryDiscountable").change(function () {
+                toggleMaxQtyField();
+            });
+        });
+    </script>
+}

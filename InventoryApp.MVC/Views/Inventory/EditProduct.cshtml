@@ -1,0 +1,210 @@
+﻿@model InventoryApp.Core.Models.Product
+@{
+    ViewData["Title"] = "Edit Product";
+}
+
+<div class="container-fluid m-4">
+    <h2>@ViewData["Title"]</h2>
+
+    <form asp-action="EditProduct" method="post" class="row g-3 needs-validation">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+
+        <!-- Product Info -->
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="ProductName"></label>
+            <input asp-for="ProductName" class="form-control" placeholder="Enter product name" required />
+            <span asp-validation-for="ProductName" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Enter the official name of the product as it appears in your inventory.
+            </small>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="ProductAlias"></label>
+            <input asp-for="ProductAlias" class="form-control" placeholder="Enter product alias" />
+            <span asp-validation-for="ProductAlias" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Enter the alias name of the product as it appears in your packaging label.
+            </small>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="MasterSku"></label>
+            <input asp-for="MasterSku" class="form-control" readonly />
+            <span asp-validation-for="MasterSku" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Enter the master SKU exactly as used in your inventory system for unique product tracking.
+            </small>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="UnitOfMeasure"></label>
+            @Html.DropDownListFor(model => model.UnitOfMeasure, (SelectList)ViewBag.UnitOfMeasureList, "-- Select Unit --", new { @class = "form-control" })
+            <span asp-validation-for="UnitOfMeasure" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Select the unit that best represents how the product is measured or sold (e.g., pieces, kilograms, liters).
+            </small>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="Volume"></label>
+            <input asp-for="Volume" class="form-control" placeholder="Per gram or piece" />
+            <span asp-validation-for="Volume" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Specify the item quantity in grams or pieces.<br />
+                <strong>Example:</strong> For <em>Cuties Catz</em> (25kg per sack), enter <code>25000</code>.
+                For items sold individually like <em>VetCore</em>, enter <code>1</code> per piece.
+            </small>
+        </div>
+
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="RestockThreshold"></label>
+            <input asp-for="RestockThreshold" class="form-control" />
+            <span asp-validation-for="RestockThreshold" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Specify the minimum stock level at which the system should prompt for restocking.
+            </small>
+            <small class="form-text text-muted">
+                For example, if measured by weight, enter the equivalent quantity (e.g., 25,000 grams = 1 sack). If measured by packaging, specify the unit count (e.g., 48 pieces = 1 pack).
+            </small>
+        </div>
+
+        <!-- Statutory Discount -->
+        <div class="form-group col-12 col-md-6">
+            <div class="form-check mt-4">
+                <input asp-for="IsStatutoryDiscountable" class="form-check-input" type="checkbox" />
+                <label asp-for="IsStatutoryDiscountable" class="form-check-label"></label>
+            </div>
+            <small class="form-text text-muted">
+                Check this box if the product is eligible for statutory discounts such as senior citizen or PWD discounts.
+            </small>
+        </div>
+
+        <div class="form-group col-12 col-md-6" id="MaxQtyContainer" style="display:none;">
+            <label asp-for="MaxQtyForStatutoryDiscountable"></label>
+            <input asp-for="MaxQtyForStatutoryDiscountable" class="form-control" type="number" min="1" />
+            <span asp-validation-for="MaxQtyForStatutoryDiscountable" class="text-danger"></span>
+            <small class="form-text text-muted">
+                Specify the maximum quantity eligible for statutory discount in a single transaction.
+                For example, if selling rice, you may set a limit of 5 kg per purchase.
+            </small>
+        </div>
+
+        <!-- Variants -->
+        <div class="col-12">
+            <hr />
+            <h4>Product Variants</h4>
+            <div id="variant-list">
+                @for (int i = 0; i < Model.Variants.Count; i++)
+                {
+                    <div class="variant-item border p-3 mb-2">
+                        <div class="row g-3">
+                            <input type="hidden" name="Variants[@i].Id" value="@Model.Variants[i].Id" />
+                            <div class="col-12 col-md-3">
+                                <label>Variant SKU</label>
+                                <input name="Variants[@i].VariantSku" value="@Model.Variants[i].VariantSku" class="form-control" readonly/>
+                                <small class="form-text text-muted">
+                                    Unique identifier for this specific variant (e.g., size or color option).
+                                    This must not duplicate any other variant SKU.
+                                </small>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label>Variant Code</label>
+                                <input name="Variants[@i].VariantCode" value="@Model.Variants[i].VariantCode" class="form-control" readonly />
+                                <small class="form-text text-muted">
+                                    Short internal code used for quick reference or barcode mapping.
+                                    Often matches the supplier’s variant code.
+                                </small>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label>Variant Volume</label>
+                                <input name="Variants[@i].VariantVolume" value="@Model.Variants[i].VariantVolume"  class="form-control" placeholder="Per gram or piece" type="number" min="1" />
+                                <small class="form-text text-muted">
+                                    Quantity for this variant (in grams or pieces).
+                                    Example: 250 for 250g, 1 for per piece.
+                                </small>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label>Image File Name</label>
+                                <input name="Variants[@i].Image" value="@Model.Variants[i].Image" class="form-control" />
+                                <small class="form-text text-muted">
+                                    The filename of the image representing this variant (e.g., "blue-shirt.jpg").
+                                    If left blank, a default image will be used.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <button type="button" id="add-variant" class="btn btn-outline-primary mt-2">+ Add Variant</button>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <a asp-action="Products" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-success px-4">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const discountCheckbox = document.getElementById("IsStatutoryDiscountable");
+        const maxQtyContainer = document.getElementById("MaxQtyContainer");
+
+        function toggleMaxQtyField() {
+            maxQtyContainer.style.display = discountCheckbox.checked ? "block" : "none";
+        }
+
+        discountCheckbox.addEventListener("change", toggleMaxQtyField);
+        toggleMaxQtyField();
+
+        let variantIndex = @Model.Variants.Count;
+        document.getElementById('add-variant').addEventListener('click', function () {
+            const container = document.getElementById('variant-list');
+            const newVariant = document.createElement('div');
+            newVariant.classList.add('variant-item', 'border', 'p-3', 'mb-2');
+            newVariant.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <label>Variant SKU</label>
+                        <input name="Variants[${variantIndex}].VariantSku" class="form-control"/>
+                        <small class="form-text text-muted">
+                            Unique identifier for this specific variant (e.g., size or color option).
+                            This must not duplicate any other variant SKU.
+                        </small>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label>Variant Code</label>
+                        <input name="Variants[${variantIndex}].VariantCode" class="form-control" />
+                        <small class="form-text text-muted">
+                            Short internal code used for quick reference or barcode mapping.
+                            Often matches the supplier’s variant code.
+                        </small>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label>Variant Volume</label>
+                        <input name="Variants[${variantIndex}].VariantVolume" class="form-control" placeholder="Per gram or piece" type="number" min="1" />
+                        <small class="form-text text-muted">
+                            Quantity for this variant (in grams or pieces).
+                            Example: 250 for 250g, 1 for per piece.
+                        </small>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label>Image File Name</label>
+                        <input name="Variants[${variantIndex}].Image" class="form-control" />
+                        <small class="form-text text-muted">
+                            The filename of the image representing this variant (e.g., "blue-shirt.jpg").
+                            If left blank, a default image will be used.
+                        </small>
+                    </div>
+                </div>
+            `;
+            container.appendChild(newVariant);
+            variantIndex++;
+        });
+    </script>
+}

@@ -1,6 +1,5 @@
-﻿using InventoryApp.Core.Models;
-using InventoryApp.DbContext;
-using InventoryApp.Helper;
+﻿using InventoryApp.Core.Authorizations;
+using InventoryApp.Core.Models;
 using InventoryApp.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace InventoryApp.Controllers
 {
-    [Authorize(Roles = "Admin,User")]
+    [Authorize(Roles = RoleConstants.InventoryRoles)]
     public class LabelController : BaseController
     {
         private readonly ApplicationDbContext _context;
@@ -36,14 +35,14 @@ namespace InventoryApp.Controllers
         [HttpPost]
         public IActionResult LabelView(LabelPrintViewModel model)
         {
-            var product = _context.Products.FirstOrDefault(p => p.Id == model.ProductId);
+            var product = _context.Products.FirstOrDefault(p => p.Id == model.ProductId && !p.IsDisabled);
             if (product == null)
                 return BadRequest("Invalid product.");
 
             if (!ModelState.IsValid)
                 return BadRequest("Invalid input data.");
 
-            model.ProductName = product.ProductName;
+            //model.ProductName = product.ProductName;
 
             var qrContent = BuildQrCodeJson(model);
             var qrBytes = Helper.Helper.GenerateQrCode(qrContent);
@@ -54,44 +53,64 @@ namespace InventoryApp.Controllers
 
 
         [HttpGet]
-        public JsonResult GetAllBatches()
+        public JsonResult GetAllProductVariant()
         {
-            var batches = _context.Inventory
-                .Where(i => i.CurrentQty > 0)
-                .Select(i => i.BatchNo)
-                .Distinct()
-                .ToList();
+            var variantSku = _context.Products
+            .Where(d => !d.IsDisabled)
+            .SelectMany(p => p.Variants) // Flatten the list of variants from each product
+            .Select(v => v.VariantSku)  // Select only the VariantCode
+            .Distinct()                  // Ensure they are unique
+            .ToList();
 
-            return Json(batches);
+
+            return Json(variantSku);
         }
 
         [HttpGet]
-        public JsonResult GetBatchInfo(string batchNo)
+        public JsonResult GetProductVariantInfo(string variantSku)
         {
-            var inventory = _context.Inventory
-                .Where(i => i.BatchNo == batchNo && i.CurrentQty > 0)
-                .OrderByDescending(i => i.Id)
+            var variantInfo = _context.Products
+                .Where(d => !d.IsDisabled)
+                .SelectMany(p => p.Variants, (p, v) => new { Product = p, Variant = v })
+                .Where(x => x.Variant.VariantSku == variantSku)
+                .Select(x => new
+                {
+                    x.Product.Id,
+                    x.Product.ProductName,
+                    x.Product.ProductAlias,
+                    x.Product.Volume,
+                    x.Product.UnitOfMeasure,
+                    x.Variant.VariantSku,
+                    x.Variant.VariantCode,
+                    x.Variant.VariantVolume,
+                    x.Variant.Image
+                })
                 .FirstOrDefault();
 
-            if (inventory == null)
+
+            if (variantInfo == null)
             {
                 return Json(new { success = false });
             }
 
-            var product = _context.Products.FirstOrDefault(p => p.Id == inventory.ProductId);
+            var product = _context.Products.FirstOrDefault(p => p.Id == variantInfo.Id);
             if (product == null)
             {
                 return Json(new { success = false });
             }
 
+            var suggestedPricePerUnit = _context.RepackItem.Where(r => r.VariantSku == variantSku)
+                .Select(r => r.PricePerUnit)
+                .FirstOrDefault();
+
             return Json(new
             {
                 success = true,
-                productId = product.Id,
-                productName = product.ProductAlias,
+                productId = variantInfo.Id,
+                productName = variantInfo.VariantCode,
                 packagingType = product.UnitOfMeasure.ToString(),
-                currentQty = inventory.CurrentQty,
-                priceSuggestion = Math.Ceiling(inventory.PricePerUnit * (inventory.InitialQuantity / (decimal)inventory.product.Volume) / inventory.InitialQuantity)
+                variantVolume = variantInfo.VariantVolume,
+                priceSuggestion = suggestedPricePerUnit.ToString() ?? "0"
             });
         }
 
@@ -129,7 +148,7 @@ namespace InventoryApp.Controllers
               ""SellingPrice"": ""{model.SellingPrice:N2}"",
               ""Grams"": ""{(model.PackagingType == "Grams" ? model.WeightOrPieces : "")}"",
               ""Piece"": ""{(model.PackagingType == "Piece" ? model.WeightOrPieces : "")}"",
-              ""BatchNo"": ""{model.BatchNumber}""
+              ""SKU"": ""{model.SKU}""
             }}";
         }
 

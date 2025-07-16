@@ -13,11 +13,17 @@ namespace InventoryApp.Core.Models
         [Display(Name = "Product Name")]
         public string ProductName { get; set; }
 
+        [Display(Name = "Variant Code")]
+        public string VariantCode { get; set; }
+
+        [Display(Name = "Variant SKU")]
+        public string VariantSku { get; set; }
+
+        [Display(Name = "Batch Number")]
+        public string BatchNo { get; set; }
+
         [Display(Name = "Price Per Unit")]
         public decimal PricePerUnit { get; set; }
-
-        [Display(Name = "Discount")]
-        public decimal Discount { get; set; } = 0;
 
         [Display(Name = "Volume")]
         public int QuantityValue { get; set; }
@@ -28,13 +34,25 @@ namespace InventoryApp.Core.Models
         [Display(Name = "Displayed Item Quantity")]
         public int QuantityDisplayed { get; set; }
 
-        [Display(Name = "Sold Quantity")]
+        [Display(Name = "Added Qty to POS")]
+        public int QuantityDisplayedToPOS { get; set; }
+
+        [Display(Name = "Added Qty to Inventory")]
+        public int QuantityDisplayedToInventory { get; set; }
+
+        [Display(Name = "Sold / Released Quantity")]
         public int SoldQty { get; set; } = 0;
 
         [Display(Name = "Total Sales")]
         public decimal TotalSales => PricePerUnit * SoldQty;
-
         public int ProductId { get; set; }
+
+        [Display(Name = "Created By")]
+        public string CreatedBy { get; set; } = "System";
+
+        [Display(Name = "Date Created")]
+        public DateTime DateCreated { get; set; } = DateTime.Now;
+        public bool IsDeleted { get; set; } = false;
 
         [ForeignKey("ProductId")]
         public Product? product { get; set; }
@@ -45,17 +63,7 @@ namespace InventoryApp.Core.Models
         [ValidateNever]
         public Inventory? inventory { get; set; }
 
-        [Display(Name = "Variant Code")]
-        public string VariantCode =>
-            inventory != null
-                ? $"{inventory.BatchNo}--{inventory.product?.ProductName}--{QuantityValue}-{inventory?.product?.UnitOfMeasure}"
-                : string.Empty;
-
-        [Display(Name = "Created By")]
-        public string CreatedBy { get; set; } = "System";
-
-        [Display(Name = "Date Created")]
-        public DateTime DateCreated { get; set; } = DateTime.Now;
-        public bool IsDeleted { get; set; } = false;
+        public string? UpdateBy { get; set; }
+        public DateTime UpdateAt { get; set; }
     }
 }

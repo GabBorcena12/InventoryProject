@@ -1,0 +1,108 @@
+﻿@model InventoryApp.Core.Models.RepackItem
+@{
+    ViewData["Title"] = "Add Stock";
+    var variants = ViewBag.Variants as List<InventoryApp.Core.Models.ProductVariant> ?? new();
+}
+
+<div class="container-fluid m-4">
+    <h2>@ViewData["Title"]</h2>
+
+    <form asp-action="CreateStock" method="post" class="row g-3 needs-validation">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @Html.AntiForgeryToken()
+
+        @* Hidden fields *@
+        @Html.HiddenFor(m => m.Id)
+        @Html.HiddenFor(m => m.InventoryId)
+        @Html.HiddenFor(m => m.ProductId)
+        @Html.HiddenFor(m => m.product)
+        @Html.HiddenFor(m => m.inventory)
+        @Html.HiddenFor(m => m.BatchNo)
+
+
+        @* Product Name *@
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="ProductName" class="form-label fw-semibold"></label>
+            <input asp-for="ProductName" class="form-control" readonly />
+            <small class="form-text text-muted">The primary or base product from which this variant is derived.</small>
+            <span asp-validation-for="ProductName" class="text-danger"></span>
+        </div>
+
+        <!-- Variant Selection -->
+        <div class="form-group col-12 col-md-6">
+            <label class="form-label fw-semibold">Stock Variant</label>
+            <select asp-for="VariantCode" id="variantSelect" class="form-select">
+                <option value="">-- Select a variant --</option>
+                @foreach (var variant in variants)
+                {
+                    <option value="@variant.VariantCode"
+                            data-volume="@variant.VariantVolume"
+                            data-variantsku="@variant.VariantSku">
+                        @variant.VariantCode
+                    </option>
+                }
+            </select>
+            <small class="form-text text-muted">
+                Select the specific product variant to be stocked.
+            </small>
+        </div>
+
+        @* VariantSku auto-populated *@
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="VariantSku" class="form-label fw-semibold"></label>
+            <input asp-for="VariantSku" id="variantSku" class="form-control" readonly placeholder="Stock Code" />
+            <small class="form-text text-muted">This field will be auto-filled when you choose a variant.</small>
+            <span asp-validation-for="VariantSku" class="text-danger"></span>
+        </div>
+
+        @* QuantityValue auto-populated *@
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="QuantityValue" class="form-label fw-semibold"></label><strong> (@ViewBag.UOM)</strong>
+            <input asp-for="QuantityValue" id="quantityValue" class="form-control" placeholder="Per gram or piece" />
+            <small class="form-text text-muted">Indicates the product’s unit size (e.g., 1 piece, 250 grams).</small>
+            <span asp-validation-for="QuantityValue" class="text-danger"></span>
+        </div>
+
+        @* Initial Quantity *@
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="InitialQty" class="form-label fw-semibold"></label>
+            <input asp-for="InitialQty" class="form-control" value="1" />
+            <small class="form-text text-muted">The total quantity of units being added to the inventory.</small>
+            <span asp-validation-for="InitialQty" class="text-danger"></span>
+        </div>
+
+        @* Price *@
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="PricePerUnit" class="form-label fw-semibold"></label>
+            <input asp-for="PricePerUnit" class="form-control" />
+            <small class="form-text text-muted">Selling price for each stock unit.</small>
+            <span asp-validation-for="PricePerUnit" class="text-danger"></span>
+        </div>
+
+        @* Actions *@
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <button type="submit" class="btn btn-primary px-5">Add to Stocks</button>
+            <a asp-action="Repack" asp-route-id="@Model.InventoryId" class="btn btn-secondary ms-2">Back to List</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('variantSelect').addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+
+            if (selectedOption.value) {
+                // This sets VariantSku based on data-variantsku
+                document.getElementById('variantSku').value = selectedOption.dataset.variantsku || '';
+
+                // Set QuantityValue
+                document.getElementById('quantityValue').value = selectedOption.dataset.volume || '';
+            } else {
+                document.getElementById('variantSku').value = '';
+                document.getElementById('quantityValue').value = '';
+            }
+        });
+
+    </script>
+}

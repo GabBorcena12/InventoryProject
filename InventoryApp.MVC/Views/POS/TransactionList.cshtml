@@ -1,0 +1,385 @@
+﻿@model IEnumerable<InventoryApp.Core.Models.PosModels.TransactionHeader>
+
+@{
+    ViewData["Title"] = "Transaction History";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    int totalPages = (int)Math.Ceiling((decimal)totalItems / pageSize);
+    string search = ViewBag.Search ?? "";
+    bool showVoided = ViewBag.ShowVoided ?? false;
+}
+<style>
+    .modal-content.width-auto {
+        width: auto !important;
+    }
+
+    .modal-dialog {
+        display: flex;
+        justify-content: center; /* center horizontally */
+        align-items: center; /* center vertically */
+        min-height: 100vh; /* full viewport height */
+    }
+
+    .modal-content {
+        width: auto; /* shrink to fit content */
+        max-width: 600px; /* optional: set a limit */
+        margin: auto; /* ensure it's centered */
+    }
+
+    .modal-body {
+        max-height: 60vh; /* limit height relative to viewport */
+        overflow-y: auto; /* allow vertical scroll */
+        scrollbar-width: none; /* hide scrollbar in Firefox */
+        -ms-overflow-style: none; /* hide scrollbar in IE/Edge */
+    }
+
+    .modal-body::-webkit-scrollbar {
+        display: none; /* hide scrollbar in Chrome/Safari */
+    }
+
+    th {
+        text-align:left !important;
+    }
+
+</style>
+<div class="container mt-4">
+    <h2 class="mb-3">@ViewData["Title"]</h2>
+
+    <!-- Search & Filters -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-4">
+            <input type="text" name="search" value="@search" class="form-control" placeholder="Search by OR Number or Cashier" />
+        </div>
+        <div class="col-sm-2">
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+        <div class="col-sm-3 form-check d-flex align-items-center">
+            <input type="checkbox" class="form-check-input me-2" name="showVoided" value="true" @(showVoided ? "checked" : "") />
+            <label class="form-check-label">Show Voided</label>
+        </div>
+    </form>
+
+    @if (Model != null && Model.Any())
+    {
+
+        var hasActions = Model.Any(t => !t.IsVoided);
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>OR Number</th>
+                    <th>Cashier</th>
+                    <th>Status</th>
+                    <th>Transaction Date</th>
+                    <th>MOP</th>
+                    <th class="text-end">Total Amount</th>
+                    @if (hasActions)
+                    {
+                        <th>Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="@(hasActions ? 7 : 6)" class="text-center text-muted">No transactions found.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var t in Model)
+                    {
+                        <tr>
+                            <td>@t.ORNumber</td>
+                            <td>@t.CashierName</td>
+                            <td>
+                                @if (t.IsVoided)
+                                {
+                                    <span class="badge bg-danger">Voided</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                            </td>
+                            <td>@t.TransactionDate.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@t.PaymentMethod</td>
+                            <td class="text-end">@t.TotalAmount.ToString("C", new System.Globalization.CultureInfo("fil-PH"))</td>
+                            @if (hasActions)
+                            {
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#receiptModal"
+                                            data-id="@t.TransactionHeaderId"
+                                            data-isvoided="@(t.IsVoided.ToString().ToLower())">
+                                        <i class="bi bi-receipt me-1"></i> View Transaction
+                                    </button>
+                                    @if (!t.IsVoided)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#voidTransactionModal"
+                                                data-id="@t.TransactionHeaderId"
+                                                data-ornumber="@t.ORNumber">
+                                            <i class="bi bi-x-circle me-1"></i> Void Transaction
+                                        </button>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        @if (totalPages > 1)
+        {
+            <nav>
+                @{
+                    int startPage = Math.Max(1, currentPage - 1);
+                    int endPage = Math.Min(totalPages, startPage + 2);
+
+                    // Ensure exactly 3 pages (when possible)
+                    if (endPage - startPage < 2)
+                    {
+                        startPage = Math.Max(1, endPage - 2);
+                    }
+                }
+
+                <ul class="pagination" style="justify-content:center">
+                    <!-- Previous -->
+                    @if (currentPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="?search=@search&showVoided=@showVoided&page=@(currentPage - 1)&pageSize=@pageSize">Previous</a>
+                        </li>
+                    }
+
+                    <!-- Page numbers -->
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="?search=@search&showVoided=@showVoided&page=@i&pageSize=@pageSize">@i</a>
+                        </li>
+                    }
+
+                    <!-- Next -->
+                    @if (currentPage < totalPages)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="?search=@search&showVoided=@showVoided&page=@(currentPage + 1)&pageSize=@pageSize">Next</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+
+    else
+    {
+        <div class="alert alert-warning mt-3">No records found.</div>
+    }
+    <!-- Table -->
+    
+</div>
+<!-- Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content width-auto p-3">
+            <div class="modal-header">
+                <h5 class="modal-title" id="receiptModalLabel">Transaction Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="receiptContent" style="font-family: Consolas, monospace; font-size:14px; white-space:pre-wrap;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnReprint" class="btn btn-primary">Reprint Receipt</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Void Transaction Modal -->
+<div class="modal fade" id="voidTransactionModal" tabindex="-1" aria-labelledby="voidTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-controller="POS" asp-action="VoidTransactionConfirmed">
+            @Html.AntiForgeryToken()
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="voidTransactionModalLabel">Void Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    Are you sure you want to void transaction:
+                    <strong id="modalORNumber"></strong>?
+                    <input type="hidden" id="modalTransactionId" name="id" />
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Void</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#voidTransactionModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                const transactionId = button.data('id');
+                const orNumber = button.data('ornumber');
+
+                // Set values in modal
+                $('#modalTransactionId').val(transactionId);
+                $('#modalORNumber').text(orNumber);
+            });
+
+            $('#receiptModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget); // Button that triggered modal
+                const transactionId = button.data('id');
+                const isVoided = button.data('isvoided') === true;
+
+                // Disable reprint if voided
+                if (isVoided) {
+                    $('#btnReprint').prop('disabled', true).text('Reprint Disabled');
+                } else {
+                    $('#btnReprint').prop('disabled', false).text('Reprint Receipt');
+                }
+                // Clear old content
+                $('#receiptContent').html("<p>Loading receipt...</p>");
+
+                // Fetch receipt data (controller should return JSON)
+                $.get(`/POS/TransactionDetails/${transactionId}`, function (transaction) {
+                    const receiptHtml = formatReceipt(transaction);
+                    $('#receiptContent').html(receiptHtml);
+                }).fail(function (xhr, status, error) {
+                    console.error("Error fetching transaction:", error);
+                    $('#receiptContent').html("<p class='text-danger'>Failed to load receipt.</p>");
+                });
+            });
+
+            // Reprint button
+            $('#btnReprint').click(function () {
+                const receiptHtml = $('#receiptContent').html();
+                const printWindow = window.open('', '', 'height=600,width=400');
+                printWindow.document.write('<pre style="font-family: Consolas, monospace; font-size:14px;">' + receiptHtml + '</pre>');
+                printWindow.document.close();
+                printWindow.print();
+            });
+
+            function formatReceipt(transaction, options = {}) {
+                const {
+                    businessName = "Anjey's Pet Supplies",
+                    businessAddress = "BLK 16, San Jose Del Monte Heights, Muzon East",
+                    tin = "123-456-789-000",
+                    permitNumber = "2025-001234",
+                    min = "MIN: 202508060001",
+                    serial = "SN: ABC1234567",
+                    footer = "Thank you for your purchase!"
+                } = options;
+
+                const pad = (text = "", width = 50, align = "left") => {
+                    if (text.length >= width) return text.slice(0, width);
+                    if (align === "right") return text.padStart(width);
+                    if (align === "center") return text.padStart(Math.floor((width + text.length) / 2)).padEnd(width);
+                    return text.padEnd(width);
+                };
+
+                const formatLineItem = (item) => {
+                    const name = item.name.length > 28 ? item.name.slice(0, 28) + "…" : item.name;
+                    const qty = item.qty.toString().padStart(2, ' ');
+                    const price = parseFloat(item.pricePerKg || 0).toFixed(2).padStart(7, ' ');
+                    const total = (item.qty * item.pricePerKg).toFixed(2).padStart(8, ' ');
+                    return `${name}\n${qty} x ${price}${total}`;
+                };
+
+
+                const formatDiscountLine = (item) => {
+                    const discountLabel = item.name.length > 18 ? item.name.slice(0, 18) + "…" : item.name;
+                    const amount = parseFloat(item.pricePerKg || 0).toFixed(2);
+                    return ` → ${discountLabel}  -₱${amount}`;
+                };
+                
+                const lines = [];
+
+                // Header
+                lines.push(pad("RECEIPT REPRINTED", 50, "center"));
+                lines.push(pad(businessName.toUpperCase(), 50, "center"));
+                lines.push(pad(businessAddress, 50, "center"));
+                lines.push(pad(`TIN: ${tin}`, 50, "center"));
+                lines.push(pad(`Permit No: ${permitNumber}`, 50, "center"));
+                lines.push(pad(min, 50, "center"));
+                lines.push(pad(serial, 50, "center"));
+                lines.push("-".repeat(50));
+                lines.push(pad(`Date: ${new Date(transaction.transactionDate).toLocaleString()}`, 50));
+                lines.push(pad(`Cashier: ${transaction.cashierName ?? "N/A"}`, 50));
+                lines.push(pad(`OR#: ${transaction.oRNumber ?? "N/A"}`, 50));
+                lines.push("-".repeat(50));
+
+                // Parse cart JSON
+                let cart = [];
+                try {
+                    if (transaction.cart) {
+                        cart = JSON.parse(transaction.cart);
+                        if (!Array.isArray(cart)) cart = [cart];
+                    }
+                } catch (e) {
+                    console.error("Invalid Cart JSON:", e);
+                }
+
+                // Sort so discounts follow items
+                const sortedCart = [];
+                cart.forEach(item => {
+                    if (!item.isDiscount) {
+                        sortedCart.push(item);
+                        const relatedDiscounts = cart.filter(d => d.isDiscount && d.relatedSKUForSeniorPwdDiscount === item.sku);
+                        sortedCart.push(...relatedDiscounts);
+                    } else if (!item.relatedSKUForSeniorPwdDiscount) {
+                        sortedCart.push(item);
+                    }
+                });
+
+                // Items + discounts
+                sortedCart.forEach(item => {
+                    if (!item.isDiscount) {
+                        lines.push(formatLineItem(item));
+                    } else {
+                        lines.push(formatDiscountLine(item));
+                    }
+                });
+
+                lines.push("-".repeat(50));
+
+                // Totals
+                const subtotal = cart.reduce((sum, i) => sum + (!i.isDiscount ? (i.pricePerKg * i.qty) : 0), 0);
+                const totalDiscount = cart.reduce((sum, i) => sum + (i.isDiscount ? Math.abs(i.pricePerKg) : 0), 0);
+                const total = transaction.totalAmount ?? (subtotal - totalDiscount);
+
+                lines.push(pad(`Subtotal: ₱${subtotal.toFixed(2)}`, 50, "right"));
+                lines.push(pad(`Discount: -₱${totalDiscount.toFixed(2)}`, 50, "right"));
+                lines.push(pad(`TOTAL: ₱${total.toFixed(2)}`, 50, "right"));
+                lines.push(pad(`Cash: ₱${(transaction.amountTendered ?? total).toFixed(2)}`, 50, "right"));
+                lines.push(pad(`Change: ₱${(transaction.changeAmount ?? 0).toFixed(2)}`, 50, "right"));
+                lines.push("-".repeat(50));
+
+                // Footer
+                lines.push(pad(footer, 50, "center"));
+                lines.push(pad("This serves as your", 50, "center"));
+                lines.push(pad("OFFICIAL RECEIPT", 50, "center"));
+                lines.push(pad("", 50)); // spacer
+
+                return lines.join("\n");
+            }
+
+
+        });
+    </script>
+}

@@ -84,14 +84,14 @@
         {
             <div class="label">
                 <div class="label-left">
-                    <div class="product-name">@Model.ProductName</div>
+                    <div class="product-name">@* @Model.SKU -  *@@Model.ProductName</div>
                     <div class="details">
                         @{
                             var unit = Model.PackagingType.ToString();
                             var qty = Model.WeightOrPieces;
                             var pluralSuffix = ((qty != "0" && qty != "1") && unit != null && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
                         }
-                        @Model.WeightOrPieces @unit@pluralSuffix
+                       @*  @Model.WeightOrPieces @unit@pluralSuffix *@
                     </div>
                     <div class="price">₱@Model.SellingPrice.ToString("N2")</div>
                 </div>

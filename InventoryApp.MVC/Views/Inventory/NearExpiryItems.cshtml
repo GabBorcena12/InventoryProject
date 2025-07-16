@@ -8,13 +8,10 @@
         Shows a list of inventory items that are within 90 days of their expiration date to help prioritize clearance or disposal.
     </p>
 
-    @await Html.PartialAsync("_ToastMessages")
-    @await Html.PartialAsync("_ErrorMessage")
-
     @if (Model != null && Model.Any())
     {
         <table class="table table-bordered table-striped table-responsive">
-            <thead class="table-dark">
+            <thead>
                 <tr>
                     <th>Batch No</th>
                     <th>Product Name</th>
@@ -77,7 +74,11 @@
                             <span class="@cssClass">@status</span>
                         </td>
                         <td>
-                            <a asp-action="ViewInventory" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">View Details</a>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a asp-action="ViewInventory" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                    <i class="bi bi-eye me-1"></i>View Details
+                                    </a>
+                            </div>                            
                         </td>
                     </tr>
                 }

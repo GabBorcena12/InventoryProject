@@ -21,6 +21,14 @@ body {
   margin-bottom: 60px;
 }
 
+table th {
+    text-align: center;
+}
+
+table thead {
+    background-color: #2A4759;
+    color: white;
+}
 .navbar-nav .nav-link {
     transition: color 0.3s, background-color 0.3s;
 }
@@ -93,12 +101,17 @@ body {
 }
 
 .page-item.active a.page-link {
-    color: black !important;
+    color: white !important;
+}
+
+.page-item {
+    border: solid;
+    border-color: white;
 }
 
 .bg-success {
-    background-color: #d15176 !important;
-    border: #d15176 !important;
+    background-color: #2A4759 !important;
+    border: #2A4759 !important;
 }
 
 /* Custom Navbar Color */
@@ -123,17 +136,21 @@ body {
         color: #ffffff;
     }
 
-/*@media (max-width: 1468px) {
-    .navbar-expand-xl .navbar-collapse {
+    .diplay-none {
         display: none !important;
     }
 
-    .navbar-expand-xl .navbar-toggler {
-        display: block !important;
-    }
-
-    .navbar-expand-xl.collapsed .navbar-collapse {
-        display: block !important;
-    }
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
 }
-*/
+
+.bg-prompt-status {
+    background-color: #4CAF50; /* Success Green */
+    color: #F1FAEE !important;
+}
+
+.bg-error {
+    background-color: #FFB347; /* Warning/Orange */
+    color: #2A2A2A !important; /* Dark text for contrast */
+}

@@ -9,38 +9,44 @@
 <div class="container-fluid m-4">
     <h2>@ViewData["Title"]</h2>
 
-    @await Html.PartialAsync("_ToastMessages")
-    @await Html.PartialAsync("_ErrorMessage")
-    <form asp-action="CreateInventory" method="post" class="row g-3">
+    <form asp-action="CreateInventory" method="post" class="row g-3 needs-validation">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @Html.AntiForgeryToken()
 
         <!-- Batch Number -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label asp-for="BatchNo"></label>
             <input asp-for="BatchNo" class="form-control" value="@ViewBag.BatchNo" readonly />
             <small class="form-text text-muted">Automatically generated batch number.</small>
             <span asp-validation-for="BatchNo" class="text-danger"></span>
         </div>
 
-        <!-- SKU -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
-            <label asp-for="SKU"></label>
-            <input asp-for="SKU" class="form-control" placeholder="Optional SKU code" />
-            <small class="form-text text-muted">Enter a stock keeping unit (SKU) if available; leave blank if not applicable.</small>
-            <span asp-validation-for="SKU" class="text-danger"></span>
-        </div>
-
         <!-- Product with Select2 Search -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label asp-for="ProductId"></label>
-            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-control select2-dropdown" id="ProductId">
+            <select asp-for="ProductId" class="form-control select2-dropdown" id="ProductId">
                 <option value="">-- Select Product --</option>
+                @foreach (var product in (IEnumerable<dynamic>)ViewBag.Products)
+                {
+                    <option value="@product.Id" data-mastersku="@product.MasterSku" data-initialquantity="@product.InitialQuantity">@product.Name</option>
+                }
             </select>
+
             <small class="form-text text-muted">Search or select the product to add to inventory.</small>
             <span asp-validation-for="ProductId" class="text-danger"></span>
         </div>
 
+        <!-- SKU -->
+        <div class="form-group col-12 col-md-6">
+            <label asp-for="SKU"></label>
+            <input asp-for="SKU" class="form-control" placeholder="Master SKU" readonly/>
+            <small class="form-text text-muted">Enter a stock keeping unit (SKU) if available; leave blank if not applicable.</small>
+            <span asp-validation-for="SKU" class="text-danger"></span>
+        </div>
+
+
         <!-- Initial Quantity -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label>Order Quantity</label>
             <input asp-for="InitialQuantity" class="form-control" placeholder="Per gram or piece" />
             <small class="form-text text-muted">
@@ -51,7 +57,7 @@
         </div>
 
         <!-- Cost Per Unit -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label asp-for="CostPerUnit"></label>
             <input asp-for="CostPerUnit" class="form-control" placeholder="0" />
             <small class="form-text text-muted">
@@ -61,7 +67,7 @@
         </div>
 
         <!-- Price Per Unit -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label asp-for="PricePerUnit"></label>
             <input asp-for="PricePerUnit" class="form-control" placeholder="0" />
             <small class="form-text text-muted">
@@ -71,7 +77,7 @@
         </div>
 
         <!-- Supplier -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label asp-for="SupplierId"></label>
             <select asp-for="SupplierId" asp-items="ViewBag.Suppliers" class="form-control"></select>
             <small class="form-text text-muted">Select the supplier from whom the inventory was ordered.</small>
@@ -79,7 +85,7 @@
         </div>
 
         <!-- Expiry Date -->
-        <div class="form-group col-12 col-md-6 col-lg-4">
+        <div class="form-group col-12 col-md-6">
             <label asp-for="ExpiryDate"></label>
             <input asp-for="ExpiryDate" type="date" class="form-control" />
             <small class="form-text text-muted">
@@ -98,12 +104,27 @@
 
 <!-- Scripts Section -->
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
 
     <!-- Include Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
+        $(document).ready(function () {
+            $('.select2-dropdown').select2({
+                placeholder: "-- Select Product --",
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#ProductId').on('change', function () {
+                var selectedMasterSku = $(this).find(':selected').data('mastersku');
+                $('#SKU').val(selectedMasterSku || '');
+
+
+                var selectedInitialQuantity = $(this).find(':selected').data('initialquantity');
+                $('#InitialQuantity').val(selectedInitialQuantity || '');
+            });
+        });
         $(document).ready(function () {
             $('.select2-dropdown').select2({
                 placeholder: "-- Select Product --",

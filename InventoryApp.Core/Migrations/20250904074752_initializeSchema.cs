@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace InventoryApp.Core.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class initializeSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,6 +31,7 @@ namespace InventoryApp.Core.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     IsConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    IsDisabled = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -59,7 +60,7 @@ namespace InventoryApp.Core.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     EntityName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EntityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EntityId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PerformedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -70,23 +71,117 @@ namespace InventoryApp.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DiscountType",
+                columns: table => new
+                {
+                    DiscountTypeId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DiscountType", x => x.DiscountTypeId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OperatingExpenses",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Category = table.Column<int>(type: "int", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Category = table.Column<int>(type: "int", nullable: true),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_OperatingExpenses", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "POSDiscount",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    discountSKU = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    skuDiscountType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    amountType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    buyQty = table.Column<int>(type: "int", nullable: false),
+                    takeQty = table.Column<int>(type: "int", nullable: false),
+                    relatedSKU = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    isActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_POSDiscount", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "POSProduct",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PricePerKg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    QtyDisplayed = table.Column<int>(type: "int", nullable: false),
+                    QtySold = table.Column<int>(type: "int", nullable: false),
+                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsStatutoryDiscountable = table.Column<bool>(type: "bit", nullable: false),
+                    maxQtyForStatutoryDiscountable = table.Column<int>(type: "int", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_POSProduct", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "POSTransactionHeaders",
+                columns: table => new
+                {
+                    TransactionHeaderId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ORNumber = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RegularDiscount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    StatutoryDiscount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    VATIncluded = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    VATExcluded = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    AmountTendered = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    ChangeAmount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    CashierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TerminalId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Cart = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsVoided = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_POSTransactionHeaders", x => x.TransactionHeaderId);
                 });
 
             migrationBuilder.CreateTable(
@@ -96,13 +191,17 @@ namespace InventoryApp.Core.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductAlias = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Volume = table.Column<int>(type: "int", nullable: false),
                     UnitOfMeasure = table.Column<int>(type: "int", nullable: false),
                     RestockThreshold = table.Column<int>(type: "int", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    IsDisabled = table.Column<bool>(type: "bit", nullable: false)
+                    IsDisabled = table.Column<bool>(type: "bit", nullable: false),
+                    MasterSku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsStatutoryDiscountable = table.Column<bool>(type: "bit", nullable: false),
+                    MaxQtyForStatutoryDiscountable = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -123,7 +222,9 @@ namespace InventoryApp.Core.Migrations
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -237,6 +338,100 @@ namespace InventoryApp.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "POSAuditLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Action = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OldDiscountTypeId = table.Column<int>(type: "int", nullable: true),
+                    NewDiscountTypeId = table.Column<int>(type: "int", nullable: true),
+                    PerformedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TransactionId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_POSAuditLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_POSAuditLogs_DiscountType_NewDiscountTypeId",
+                        column: x => x.NewDiscountTypeId,
+                        principalTable: "DiscountType",
+                        principalColumn: "DiscountTypeId",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_POSAuditLogs_DiscountType_OldDiscountTypeId",
+                        column: x => x.OldDiscountTypeId,
+                        principalTable: "DiscountType",
+                        principalColumn: "DiscountTypeId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "POSTransactionDetails",
+                columns: table => new
+                {
+                    TransactionDetailId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransactionHeaderId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Qty = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PricePerKg = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    StepQty = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDiscount = table.Column<bool>(type: "bit", nullable: true),
+                    IsRegularItem = table.Column<bool>(type: "bit", nullable: true),
+                    IsStatutoryDiscountable = table.Column<bool>(type: "bit", nullable: true),
+                    IsDiscountRemovableOnUpdateCart = table.Column<bool>(type: "bit", nullable: true),
+                    IsSeniorDiscountAppliedToItem = table.Column<bool>(type: "bit", nullable: true),
+                    IsBuyTakeDiscount = table.Column<bool>(type: "bit", nullable: true),
+                    IsRegularDiscountItem = table.Column<bool>(type: "bit", nullable: true),
+                    MaxQtyForStatutoryDiscountable = table.Column<int>(type: "int", nullable: true),
+                    ReplacedSKU = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RelatedSKUForSeniorPwdDiscount = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RemoveLabel = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DiscountRateLabel = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_POSTransactionDetails", x => x.TransactionDetailId);
+                    table.ForeignKey(
+                        name: "FK_POSTransactionDetails_POSTransactionHeaders_TransactionHeaderId",
+                        column: x => x.TransactionHeaderId,
+                        principalTable: "POSTransactionHeaders",
+                        principalColumn: "TransactionHeaderId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductVariants",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    VariantSku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VariantCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VariantVolume = table.Column<int>(type: "int", nullable: false),
+                    Image = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductVariants", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductVariants_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Inventory",
                 columns: table => new
                 {
@@ -303,23 +498,52 @@ namespace InventoryApp.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "POSAuditLogItem",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DiscountAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    AuditLogId = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_POSAuditLogItem", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_POSAuditLogItem_POSAuditLogs_AuditLogId",
+                        column: x => x.AuditLogId,
+                        principalTable: "POSAuditLogs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RepackItem",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VariantCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VariantSku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BatchNo = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PricePerUnit = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Discount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     QuantityValue = table.Column<int>(type: "int", nullable: false),
                     InitialQty = table.Column<int>(type: "int", nullable: false),
                     QuantityDisplayed = table.Column<int>(type: "int", nullable: false),
+                    QuantityDisplayedToPOS = table.Column<int>(type: "int", nullable: false),
+                    QuantityDisplayedToInventory = table.Column<int>(type: "int", nullable: false),
                     SoldQty = table.Column<int>(type: "int", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
-                    InventoryId = table.Column<int>(type: "int", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    InventoryId = table.Column<int>(type: "int", nullable: false),
+                    UpdateBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdateAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -344,20 +568,52 @@ namespace InventoryApp.Core.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    RepackItemId = table.Column<int>(type: "int", nullable: false),
                     QuantityDisplayed = table.Column<int>(type: "int", nullable: false),
                     QuantitySold = table.Column<int>(type: "int", nullable: false),
                     IsSoldOut = table.Column<bool>(type: "bit", nullable: false),
                     DisplayedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    DisplayedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RepackItemId = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DisplayItems", x => x.Id);
                     table.ForeignKey(
                         name: "FK_DisplayItems_RepackItem_RepackItemId",
+                        column: x => x.RepackItemId,
+                        principalTable: "RepackItem",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TransactionRepackItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TransactionDetailId = table.Column<int>(type: "int", nullable: false),
+                    RepackItemId = table.Column<int>(type: "int", nullable: false),
+                    AllocatedQty = table.Column<int>(type: "int", nullable: false),
+                    IsVoided = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TransactionRepackItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TransactionRepackItems_POSTransactionDetails_TransactionDetailId",
+                        column: x => x.TransactionDetailId,
+                        principalTable: "POSTransactionDetails",
+                        principalColumn: "TransactionDetailId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TransactionRepackItems_RepackItem_RepackItemId",
                         column: x => x.RepackItemId,
                         principalTable: "RepackItem",
                         principalColumn: "Id",
@@ -376,8 +632,9 @@ namespace InventoryApp.Core.Migrations
                     Quantity = table.Column<int>(type: "int", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     SalesChannel = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DateSold = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SoldBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -401,6 +658,43 @@ namespace InventoryApp.Core.Migrations
                         principalTable: "RepackItem",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CreditMemos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CreditMemoNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TransactionDetailId = table.Column<int>(type: "int", nullable: false),
+                    SaleId = table.Column<int>(type: "int", nullable: true),
+                    TransactionOrNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Sku = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProductName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Qty = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsBroken = table.Column<bool>(type: "bit", nullable: false),
+                    IssuedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsVoided = table.Column<bool>(type: "bit", nullable: false),
+                    IssuedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CreditMemos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CreditMemos_POSTransactionDetails_TransactionDetailId",
+                        column: x => x.TransactionDetailId,
+                        principalTable: "POSTransactionDetails",
+                        principalColumn: "TransactionDetailId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CreditMemos_Sales_SaleId",
+                        column: x => x.SaleId,
+                        principalTable: "Sales",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -443,6 +737,16 @@ namespace InventoryApp.Core.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CreditMemos_SaleId",
+                table: "CreditMemos",
+                column: "SaleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CreditMemos_TransactionDetailId",
+                table: "CreditMemos",
+                column: "TransactionDetailId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DisplayItems_RepackItemId",
                 table: "DisplayItems",
                 column: "RepackItemId");
@@ -456,6 +760,37 @@ namespace InventoryApp.Core.Migrations
                 name: "IX_Inventory_SupplierId",
                 table: "Inventory",
                 column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_POSAuditLogItem_AuditLogId",
+                table: "POSAuditLogItem",
+                column: "AuditLogId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_POSAuditLogs_NewDiscountTypeId",
+                table: "POSAuditLogs",
+                column: "NewDiscountTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_POSAuditLogs_OldDiscountTypeId",
+                table: "POSAuditLogs",
+                column: "OldDiscountTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_POSTransactionDetails_TransactionHeaderId",
+                table: "POSTransactionDetails",
+                column: "TransactionHeaderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_POSTransactionHeaders_ORNumber",
+                table: "POSTransactionHeaders",
+                column: "ORNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductVariants_ProductId",
+                table: "ProductVariants",
+                column: "ProductId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_SupplierId",
@@ -486,6 +821,16 @@ namespace InventoryApp.Core.Migrations
                 name: "IX_Sales_RepackItemId",
                 table: "Sales",
                 column: "RepackItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TransactionRepackItems_RepackItemId",
+                table: "TransactionRepackItems",
+                column: "RepackItemId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TransactionRepackItems_TransactionDetailId",
+                table: "TransactionRepackItems",
+                column: "TransactionDetailId");
         }
 
         /// <inheritdoc />
@@ -510,13 +855,28 @@ namespace InventoryApp.Core.Migrations
                 name: "AuditLogs");
 
             migrationBuilder.DropTable(
+                name: "CreditMemos");
+
+            migrationBuilder.DropTable(
                 name: "OperatingExpenses");
+
+            migrationBuilder.DropTable(
+                name: "POSAuditLogItem");
+
+            migrationBuilder.DropTable(
+                name: "POSDiscount");
+
+            migrationBuilder.DropTable(
+                name: "POSProduct");
+
+            migrationBuilder.DropTable(
+                name: "ProductVariants");
 
             migrationBuilder.DropTable(
                 name: "PurchaseOrders");
 
             migrationBuilder.DropTable(
-                name: "Sales");
+                name: "TransactionRepackItems");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -525,7 +885,22 @@ namespace InventoryApp.Core.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
+                name: "Sales");
+
+            migrationBuilder.DropTable(
+                name: "POSAuditLogs");
+
+            migrationBuilder.DropTable(
+                name: "POSTransactionDetails");
+
+            migrationBuilder.DropTable(
                 name: "DisplayItems");
+
+            migrationBuilder.DropTable(
+                name: "DiscountType");
+
+            migrationBuilder.DropTable(
+                name: "POSTransactionHeaders");
 
             migrationBuilder.DropTable(
                 name: "RepackItem");

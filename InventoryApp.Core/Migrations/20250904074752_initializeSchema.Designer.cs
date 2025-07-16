@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryApp.Core.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250715054619_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250904074752_initializeSchema")]
+    partial class initializeSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,12 +33,9 @@ namespace InventoryApp.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("DisplayedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("DisplayedOn")
                         .HasColumnType("datetime2");
@@ -85,6 +82,9 @@ namespace InventoryApp.Core.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDisabled")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
@@ -150,7 +150,6 @@ namespace InventoryApp.Core.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EntityId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EntityName")
@@ -241,11 +240,10 @@ namespace InventoryApp.Core.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("Category")
+                    b.Property<int?>("Category")
                         .HasColumnType("int");
 
                     b.Property<string>("CreatedBy")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("Date")
@@ -255,7 +253,6 @@ namespace InventoryApp.Core.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
@@ -267,6 +264,487 @@ namespace InventoryApp.Core.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("OperatingExpenses");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("NewDiscountTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OldDiscountTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NewDiscountTypeId");
+
+                    b.HasIndex("OldDiscountTypeId");
+
+                    b.ToTable("POSAuditLogs");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.AuditLogItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuditLogId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditLogId");
+
+                    b.ToTable("POSAuditLogItem");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.CreditMemo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("CreditMemoNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsBroken")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IssuedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Qty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SaleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TransactionDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransactionOrNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SaleId");
+
+                    b.HasIndex("TransactionDetailId");
+
+                    b.ToTable("CreditMemos");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.Discount", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("amountType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("buyQty")
+                        .HasColumnType("int");
+
+                    b.Property<string>("discountSKU")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("isActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("relatedSKU")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("skuDiscountType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("takeQty")
+                        .HasColumnType("int");
+
+                    b.HasKey("id");
+
+                    b.ToTable("POSDiscount");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.DiscountType", b =>
+                {
+                    b.Property<int>("DiscountTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DiscountTypeId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("DiscountTypeId");
+
+                    b.ToTable("DiscountType");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.Product", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStatutoryDiscountable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PricePerKg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("QtyDisplayed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QtySold")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("maxQtyForStatutoryDiscountable")
+                        .HasColumnType("int");
+
+                    b.HasKey("id");
+
+                    b.ToTable("POSProduct");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.TransactionDetail", b =>
+                {
+                    b.Property<int>("TransactionDetailId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionDetailId"));
+
+                    b.Property<string>("DiscountRateLabel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IsBuyTakeDiscount")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsDiscount")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsDiscountRemovableOnUpdateCart")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsRegularDiscountItem")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsRegularItem")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsSeniorDiscountAppliedToItem")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("IsStatutoryDiscountable")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MaxQtyForStatutoryDiscountable")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("PricePerKg")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Qty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("RelatedSKUForSeniorPwdDiscount")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RemoveLabel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReplacedSKU")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("StepQty")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TransactionHeaderId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TransactionDetailId");
+
+                    b.HasIndex("TransactionHeaderId");
+
+                    b.ToTable("POSTransactionDetails");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.TransactionHeader", b =>
+                {
+                    b.Property<int>("TransactionHeaderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactionHeaderId"));
+
+                    b.Property<decimal>("AmountTendered")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Cart")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CashierName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("ChangeAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ORNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("RegularDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("StatutoryDiscount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("TerminalId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("VATExcluded")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("VATIncluded")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("TransactionHeaderId");
+
+                    b.HasIndex("ORNumber")
+                        .IsUnique();
+
+                    b.ToTable("POSTransactionHeaders");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.TransactionRepackItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AllocatedQty")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsVoided")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RepackItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TransactionDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RepackItemId");
+
+                    b.HasIndex("TransactionDetailId");
+
+                    b.ToTable("TransactionRepackItems");
                 });
 
             modelBuilder.Entity("InventoryApp.Core.Models.Product", b =>
@@ -290,6 +768,19 @@ namespace InventoryApp.Core.Migrations
                     b.Property<bool>("IsDisabled")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsStatutoryDiscountable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MasterSku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MaxQtyForStatutoryDiscountable")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProductAlias")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -306,6 +797,38 @@ namespace InventoryApp.Core.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.ProductVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Image")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VariantCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VariantSku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("VariantVolume")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductVariants");
                 });
 
             modelBuilder.Entity("InventoryApp.Core.Models.PurchaseOrder", b =>
@@ -367,16 +890,16 @@ namespace InventoryApp.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BatchNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal>("Discount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("InitialQty")
                         .HasColumnType("int");
@@ -401,11 +924,31 @@ namespace InventoryApp.Core.Migrations
                     b.Property<int>("QuantityDisplayed")
                         .HasColumnType("int");
 
+                    b.Property<int>("QuantityDisplayedToInventory")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityDisplayedToPOS")
+                        .HasColumnType("int");
+
                     b.Property<int>("QuantityValue")
                         .HasColumnType("int");
 
                     b.Property<int>("SoldQty")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdateAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdateBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VariantCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VariantSku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -424,10 +967,6 @@ namespace InventoryApp.Core.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("DateSold")
                         .HasColumnType("datetime2");
 
@@ -443,10 +982,17 @@ namespace InventoryApp.Core.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("RepackItemId")
                         .HasColumnType("int");
 
                     b.Property<string>("SalesChannel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SoldBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -503,6 +1049,12 @@ namespace InventoryApp.Core.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -673,6 +1225,90 @@ namespace InventoryApp.Core.Migrations
                     b.Navigation("supplier");
                 });
 
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.AuditLog", b =>
+                {
+                    b.HasOne("InventoryApp.Core.Models.PosModels.DiscountType", "NewDiscountType")
+                        .WithMany()
+                        .HasForeignKey("NewDiscountTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("InventoryApp.Core.Models.PosModels.DiscountType", "OldDiscountType")
+                        .WithMany()
+                        .HasForeignKey("OldDiscountTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("NewDiscountType");
+
+                    b.Navigation("OldDiscountType");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.AuditLogItem", b =>
+                {
+                    b.HasOne("InventoryApp.Core.Models.PosModels.AuditLog", "AuditLog")
+                        .WithMany("ItemsAffected")
+                        .HasForeignKey("AuditLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuditLog");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.CreditMemo", b =>
+                {
+                    b.HasOne("InventoryApp.Core.Models.Sale", "Sale")
+                        .WithMany()
+                        .HasForeignKey("SaleId");
+
+                    b.HasOne("InventoryApp.Core.Models.PosModels.TransactionDetail", "TransactionDetail")
+                        .WithMany()
+                        .HasForeignKey("TransactionDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sale");
+
+                    b.Navigation("TransactionDetail");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.TransactionDetail", b =>
+                {
+                    b.HasOne("InventoryApp.Core.Models.PosModels.TransactionHeader", "TransactionHeader")
+                        .WithMany("TransactionDetails")
+                        .HasForeignKey("TransactionHeaderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TransactionHeader");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.TransactionRepackItem", b =>
+                {
+                    b.HasOne("InventoryApp.Core.Models.RepackItem", "RepackItem")
+                        .WithMany()
+                        .HasForeignKey("RepackItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InventoryApp.Core.Models.PosModels.TransactionDetail", "TransactionDetail")
+                        .WithMany()
+                        .HasForeignKey("TransactionDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RepackItem");
+
+                    b.Navigation("TransactionDetail");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.ProductVariant", b =>
+                {
+                    b.HasOne("InventoryApp.Core.Models.Product", null)
+                        .WithMany("Variants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("InventoryApp.Core.Models.PurchaseOrder", b =>
                 {
                     b.HasOne("InventoryApp.Core.Models.Supplier", "Supplier")
@@ -705,7 +1341,7 @@ namespace InventoryApp.Core.Migrations
 
             modelBuilder.Entity("InventoryApp.Core.Models.Sale", b =>
                 {
-                    b.HasOne("DisplayItem", "DisplayItem")
+                    b.HasOne("DisplayItem", "displayItem")
                         .WithMany()
                         .HasForeignKey("DisplayItemId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -715,16 +1351,16 @@ namespace InventoryApp.Core.Migrations
                         .HasForeignKey("InventoryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("InventoryApp.Core.Models.RepackItem", "RepackItem")
+                    b.HasOne("InventoryApp.Core.Models.RepackItem", "repackItem")
                         .WithMany()
                         .HasForeignKey("RepackItemId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("DisplayItem");
-
                     b.Navigation("Inventory");
 
-                    b.Navigation("RepackItem");
+                    b.Navigation("displayItem");
+
+                    b.Navigation("repackItem");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -783,6 +1419,21 @@ namespace InventoryApp.Core.Migrations
                     b.Navigation("Sales");
 
                     b.Navigation("repackItems");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.AuditLog", b =>
+                {
+                    b.Navigation("ItemsAffected");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.PosModels.TransactionHeader", b =>
+                {
+                    b.Navigation("TransactionDetails");
+                });
+
+            modelBuilder.Entity("InventoryApp.Core.Models.Product", b =>
+                {
+                    b.Navigation("Variants");
                 });
 #pragma warning restore 612, 618
         }

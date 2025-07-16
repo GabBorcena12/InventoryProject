@@ -1,0 +1,91 @@
+﻿@model IEnumerable<InventoryApp.MVC.Models.ViewModel.AuditLogDto>
+
+@{
+    ViewData["Title"] = "POS Audit Logs";
+
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    int totalPages = (int)Math.Ceiling((decimal)totalItems / pageSize);
+    string performedBy = ViewBag.PerformedByFilter ?? "";
+    string startDate = ViewBag.StartDateFilter ?? DateTime.Today.ToString("yyyy-MM-dd");
+    string endDate = ViewBag.EndDateFilter ?? DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3">@ViewData["Title"]</h2>
+
+    <!-- Search & Filters -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-3">
+            <input type="text" name="performedBy" value="@performedBy" class="form-control" placeholder="Search by OR Number or User" />
+        </div>
+        <div class="col-sm-3">
+            <input type="date" name="startDate" value="@startDate" class="form-control" />
+        </div>
+        <div class="col-sm-3">
+            <input type="date" name="endDate" value="@endDate" class="form-control" />
+        </div>
+        <div class="col-sm-2">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+    </form>
+
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Transaction ID</th>
+                    <th>Action</th>
+                    <th>Performed By</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@log.TransactionId</td>
+                        <td>@log.Action</td>
+                        <td>@log.PerformedBy</td>
+                        <td>@log.Reason</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        @if (totalPages > 1)
+        {
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?performedBy=@performedBy&startDate=@startDate&endDate=@endDate&page=1&pageSize=@pageSize">First</a>
+                    </li>
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="?performedBy=@performedBy&startDate=@startDate&endDate=@endDate&page=@(currentPage - 1)&pageSize=@pageSize">Previous</a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="?performedBy=@performedBy&startDate=@startDate&endDate=@endDate&page=@i&pageSize=@pageSize">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="?performedBy=@performedBy&startDate=@startDate&endDate=@endDate&page=@(currentPage + 1)&pageSize=@pageSize">Next</a>
+                    </li>
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="?performedBy=@performedBy&startDate=@startDate&endDate=@endDate&page=@totalPages&pageSize=@pageSize">Last</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">No audit logs found.</div>
+    }
+</div>

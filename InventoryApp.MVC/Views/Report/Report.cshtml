@@ -25,34 +25,54 @@
                 {
                     var selectedMonth = ViewBag.SelectedMonth as int? ?? DateTime.Now.Month;
                     var selectedYear = ViewBag.SelectedYear as int? ?? DateTime.Now.Year;
+                    @* 🔹 If Sales Overview -> Year only *@
 
-                    <form asp-action="@ViewBag.Action" asp-controller="Report" method="get" class="d-flex gap-2 align-items-end">
-                        <div>
-                            <label for="month" class="form-label mb-1">Month:</label>
-                            <select id="month" name="month" class="form-select">
-                                @for (int m = 1; m <= 12; m++)
-                                {
-                                    <option value="@m" selected="@(m == selectedMonth ? "selected" : null)">
-                                        @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m)
-                                    </option>
-                                }
-                            </select>
-                        </div>
+                    <form asp-action="@ViewBag.Action" asp-controller="Report" method="get" class="d-flex gap-2 align-items-end flex-wrap">
+                        @if (ViewBag.Action == "SalesOverview")
+                        {
+                            <div>
+                                <label for="year" class="form-label mb-1">Year:</label>
+                                <select id="year" name="year" class="form-select">
+                                    @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 5; y--)
+                                    {
+                                        <option value="@y" selected="@(y == selectedYear ? "selected" : null)">@y</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <div>
+                                <label for="fromDate" class="form-label mb-1">From:</label>
+                                <input type="date" id="fromDate" name="fromDate" value="@ViewBag.SelectedFromDate" class="form-control" />
+                            </div>
 
-                        <div>
-                            <label for="year" class="form-label mb-1">Year:</label>
-                            <select id="year" name="year" class="form-select">
-                                @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 5; y--)
-                                {
-                                    <option value="@y" selected="@(y == selectedYear ? "selected" : null)">@y</option>
-                                }
-                            </select>
-                        </div>
+                            <div>
+                                <label for="toDate" class="form-label mb-1">To:</label>
+                                <input type="date" id="toDate" name="toDate" value="@ViewBag.SelectedToDate" class="form-control" />
+                            </div>
+
+                        }
+                        @* 🔹 Channel Filter *@
+                        @if (ViewBag.EnableChannelFilter != null && ViewBag.EnableChannelFilter == true)
+                        {
+                            var selectedChannel = ViewBag.SelectedChannel as string ?? "All";
+
+                            <div>
+                                <label for="salesChannel" class="form-label mb-1">Sales Channel:</label>
+                                <select id="salesChannel" name="salesChannel" class="form-select">
+                                    <option value="All" selected="@(selectedChannel == "All" ? "selected" : null)">All</option>
+                                    <option value="Inventory System" selected="@(selectedChannel == "Inventory System" ? "selected" : null)">Inventory System</option>
+                                    <option value="POS System" selected="@(selectedChannel == "POS System" ? "selected" : null)">POS System</option>
+                                </select>
+                            </div>
+                        }
 
                         <div>
                             <button type="submit" class="btn btn-primary">Filter</button>
                         </div>
                     </form>
+
                 }
 
                 @if (data != null && data.Any())
@@ -88,7 +108,7 @@
                 </tbody>
             </table>
 
-            @if (ViewBag.TotalQuantity != null || ViewBag.TotalAmount != null || ViewBag.TotalProfit != null || ViewBag.ItemCount != null)
+            @if (ViewBag.Count != null || ViewBag.TotalQuantity != null || ViewBag.TotalAmount != null || ViewBag.TotalProfit != null || ViewBag.ItemCount != null)
             {
                 <div class="mt-4 p-3 rounded bg-light border shadow-sm text-end">
                     <h5 class="mb-2 fw-semibold text-secondary">Summary</h5>
@@ -98,6 +118,14 @@
                         <div class="text-dark">
                             <span class="fw-bold">Total Quantity:</span>
                             <span class="text-success">@ViewBag.TotalQuantity Piece@(ViewBag.TotalQuantity > 1 ? "s" : "")</span>
+                        </div>
+                    }
+
+                    @if (ViewBag.Count != null)
+                    {
+                        <div class="text-dark">
+                            <span class="fw-bold">Total Count:</span>
+                            <span class="text-success">@ViewBag.Count Count@(ViewBag.Count > 1 ? "s" : "")</span>
                         </div>
                     }
 

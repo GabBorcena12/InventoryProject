@@ -1,181 +1,147 @@
 ﻿@model List<InventoryApp.Core.Models.RepackItem>
+
 @{
-    ViewData["Title"] = "Ready Items";
+    ViewData["Title"] = "Stock Items";
+    var currentPage = (int)(ViewBag.CurrentPage ?? 1);
+    var totalPages = (int)(ViewBag.TotalPages ?? 1);
 }
 
 <div class="container mt-4">
     @{
-        var repackTotalWeight = Model.Sum(item => (item.InitialQty) * item.QuantityValue);
-        var inventoryTotalWeight = ViewBag.InventoryTotalWeight;
-        bool isDisabled = repackTotalWeight >= inventoryTotalWeight;
+        var repackTotalWeight = Model.Sum(item => item.InitialQty * item.QuantityValue);
+        var inventoryTotalWeight = ViewBag.InventoryTotalWeight ?? 0;
+        bool isDisabled = repackTotalWeight >= Convert.ToDecimal(inventoryTotalWeight);
     }
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Ready Items</h2>
+        <h2>@ViewData["Title"]</h2>
         @if (isDisabled)
         {
-            <a class="btn btn-success disabled" tabindex="-1" aria-disabled="true">Add Stock</a>
+            <a class="btn btn-success disabled" tabindex="-1" aria-disabled="true"><i class="bi bi-plus"></i>Add Stock</a>
         }
         else
         {
-            <a asp-action="CreateRepack" asp-route-id="@ViewBag.InventoryId" class="btn btn-success">Add Stock</a>
+            <a asp-action="CreateStock" asp-route-id="@ViewBag.InventoryId" class="btn btn-success"><i class="bi bi-plus"></i>Add Stock</a>
         }
     </div>
-
-
-    @await Html.PartialAsync("_ToastMessages")
-    @await Html.PartialAsync("_ErrorMessage")
 
     @if (Model != null && Model.Any())
     {
         <table class="table table-bordered table-striped table-hover align-middle">
-            <thead class="table-dark">
+            <thead>
                 <tr>
-                    <th rowspan="2" class="align-middle">Inventory</th>
-                    <th rowspan="2" class="align-middle">Volume</th>
+                    <th rowspan="2" class="align-middle">Stock Variant</th>
                     <th colspan="4" class="text-center">Quantity</th>
-                    <th colspan="3" class="text-center">Amount</th>
-                    <th rowspan="2" class="align-middle">Actions</th>
+                    <th colspan="1" class="text-center">Amount</th>
+                    <th rowspan="5" class="align-middle">Actions</th>
                 </tr>
                 <tr>
-                    <th>Initial</th>
-                    <th>Displayed</th>
-                    <th>Sold</th>
+                    <th>Initial Stock</th>
+                    <th>On Display</th>
+                    <th>Sold / Released</th>
                     <th>Available</th>
-                    <th>Price</th>
-                    <th>Disc</th>
-                    <th>Sales</th>
+                    <th>Retail Price</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
                     var availableQty = item.InitialQty - item.SoldQty;
+                    var unit = item.product?.UnitOfMeasure != null ? item.product.UnitOfMeasure.ToString() : "";
+                    var qty = item.QuantityValue;
+                    var pluralSuffix = (qty > 1 && !string.IsNullOrEmpty(unit) && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
+
                     <tr>
-                        <td>@item.ProductName</td>
-                        <td>
-                            @{
-                                var unit = item.product?.UnitOfMeasure.ToString();
-                                var qty = item.QuantityValue;
-                                var pluralSuffix = (qty > 1 && unit != null && !unit.EndsWith("s", StringComparison.OrdinalIgnoreCase)) ? "s" : "";
-                            }
+                        <td>@item.VariantCode</td>
 
-                            @item.QuantityValue @unit@pluralSuffix
-                        </td>
-
-                        <td>
-                            @item.InitialQty Piece@((item.InitialQty > 1) ? "s" : "")
-                        </td>
-                        <td>
-                            @item.QuantityDisplayed Piece@((item.QuantityDisplayed > 1) ? "s" : "")
-                        </td>
-                        <td>
-                            @item.SoldQty Piece@((item.SoldQty > 1) ? "s" : "")
-                        </td>
-                        <td>
-                            @availableQty Piece@((availableQty > 1) ? "s" : "")
-                        </td>
+                        <td>@item.InitialQty Piece@((item.InitialQty > 1) ? "s" : "")</td>
+                        <td>@item.QuantityDisplayed Piece@((item.QuantityDisplayed > 1) ? "s" : "")</td>
+                        <td>@item.SoldQty Piece@((item.SoldQty > 1) ? "s" : "")</td>
+                        <td>@availableQty Piece@((availableQty > 1) ? "s" : "")</td>
 
                         <td>@item.PricePerUnit.ToString("N2")</td>
-                        <td>@item.Discount.ToString("P1")</td>
-                        <td>@item.TotalSales.ToString("N2")</td>
                         <td>
-                            <a asp-action="ViewRepack" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1 text-white">View Details</a>
-                            @if (availableQty > 0)
-                            {
-                                <div class="mt-2">
-                                    
+                            <div class="d-flex flex-wrap gap-1">
+                                <a asp-action="ViewStock" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+
+                                @if (availableQty > 0)
+                                {
                                     @if (item.QuantityDisplayed < availableQty)
                                     {
-                                        <button type="button" class="btn btn-sm btn-success me-1 mark-display-btn"
+                                        <button type="button" class="btn btn-sm btn-outline-primary mark-display-btn"
                                                 data-id="@item.Id"
-                                                data-name="@item.ProductName">
-                                            Display Item
+                                                data-name="@item.VariantCode">
+                                            <i class="bi bi-box-arrow-up"></i> Release Item
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-success add-to-pos-btn"
+                                                data-id="@item.Id"
+                                                data-name="@item.VariantCode">
+                                            <i class="bi bi-cart-plus"></i> Add to POS
                                         </button>
                                     }
                                     else
                                     {
-                                        <button type="button" class="btn btn-sm btn-secondary me-1" disabled
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled
                                                 title="All available units are already displayed.">
-                                            Displayed
+                                            <i class="bi bi-check-circle"></i> Stock Added
                                         </button>
                                     }
-                                </div>
-                            }
-                            @if (item.SoldQty == 0 && item.QuantityDisplayed == 0)
-                            {
-                                <button type="button" class="btn btn-sm btn-danger delete-btn"
-                                        data-id="@item.Id"
-                                        data-name="@item.ProductName"
-                                        data-weight="@item.QuantityValue">
-                                    Delete
-                                </button>
-                            }
+                                }
+
+                                @if (item.SoldQty == 0 && item.QuantityDisplayed == 0)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                            data-id="@item.Id"
+                                            data-name="@item.VariantCode"
+                                            data-weight="@item.QuantityValue">
+                                        <i class="bi bi-trash"></i> Delete Stock
+                                    </button>
+                                }
+                            </div>
                         </td>
                     </tr>
                 }
             </tbody>
-            <tfoot class="table-light fw-semibold">
+            <tfoot class="table-light fw-bold">
                 <tr>
-                    <td colspan="1" class="text-end">Subtotal:</td>
-                    <td>
-                        @{
-                            var totalWeight = Model.Sum(item => (item.InitialQty) * item.QuantityValue);
-                        }
-                        @totalWeight
-                    </td>
-                    <td>
-                        @{
-                            var init = Model.Sum(x => x.InitialQty);
-                        }
-                        @init Piece@((init > 1) ? "s" : "")
-                    </td>
-                    <td>
-                        @{
-                            var disp = Model.Sum(x => x.QuantityDisplayed);
-                        }
-                        @disp Piece@((disp > 1) ? "s" : "")
-                    </td>
-                    <td>
-                        @{
-                            var sold = Model.Sum(x => x.SoldQty);
-                        }
-                        @sold Piece@((sold > 1) ? "s" : "")
-                    </td>
-                    <td>
-                        @{
-                            var avail = Model.Sum(x => x.InitialQty - x.SoldQty);
-                        }
-                        @avail Piece@((avail > 1) ? "s" : "")
-                    </td>
+                    <td class="text-end">Subtotal:</td>
+                    <td>@Model.Sum(x => x.InitialQty) Piece@((Model.Sum(x => x.InitialQty) > 1) ? "s" : "")</td>
+                    <td>@Model.Sum(x => x.QuantityDisplayed) Piece@((Model.Sum(x => x.QuantityDisplayed) > 1) ? "s" : "")</td>
+                    <td>@Model.Sum(x => x.SoldQty) Piece@((Model.Sum(x => x.SoldQty) > 1) ? "s" : "")</td>
+                    <td>@Model.Sum(x => x.InitialQty - x.SoldQty) Piece@((Model.Sum(x => x.InitialQty - x.SoldQty) > 1) ? "s" : "")</td>
                     <td></td>
-                    <td></td>
-                    <td>@Model.Sum(x => x.TotalSales).ToString("N2")</td>
+                    @* <td>@Model.Sum(x => x.TotalSales).ToString("N2")</td> *@
                     <td></td>
                 </tr>
             </tfoot>
         </table>
-        @if (ViewBag.TotalPages > 1)
-        {
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center mt-4">
-                    @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
-                    {
-                        var active = (i == (int)ViewBag.CurrentPage) ? "active" : "";
-                        <li class="page-item @active">
-                            <a class="page-link" asp-action="Repack" asp-route-id="@ViewBag.InventoryId" asp-route-page="@i">@i</a>
-                        </li>
-                    }
-                </ul>
-            </nav>
-        }
-
     }
     else
     {
         <div class="alert alert-warning mt-3">No records found.</div>
     }
 </div>
+<!-- Pagination -->
+<nav>
+    <ul class="pagination justify-content-center">
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            var isActive = i == currentPage;
+
+            <li class="page-item @(isActive ? "active" : "")">
+                <a class="page-link @(isActive ? "bg-success text-white border-success" : "bg-white text-success border-success")"
+                   href="@Url.Action("Repack", new { id = ViewBag.InventoryId, page = i })">
+                    @i
+                </a>
+            </li>
+        }
+    </ul>
+</nav>
+
 
 <!-- Hidden delete form -->
 <form id="deleteForm" method="post" asp-action="DeleteRepackConfirmed">
@@ -188,14 +154,21 @@
 </form>
 
 <!-- Delete Confirmation Toast -->
-<div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1080;">
-    <div id="confirmToast" class="toast bg-warning text-dark" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-body m-1">
-            Are you sure you want to delete <strong id="toastItemName"></strong>?
-        </div>
-        <div class="d-flex justify-content-center mt-2 mb-2">
-            <button type="button" class="btn btn-sm btn-danger me-2" id="confirmDeleteBtn">Yes</button>
-            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="toast">Cancel</button>
+<div class="modal fade" id="confirmToast" tabindex="-1" aria-labelledby="confirmToastLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="confirmToastLabel">Delete Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                Are you sure you want to delete <strong id="toastItemName"></strong>?
+                <input type="hidden" name="id" id="deleteId" />
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">Confirm Delete</button>
+            </div>
         </div>
     </div>
 </div>
@@ -225,20 +198,56 @@
         <form method="post" id="markDisplayForm" asp-action="MarkAsDisplayed">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="displayModalLabel">Display Item</h5>
+                    <h5 class="modal-title" id="displayModalLabel">Release Item</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="id" id="displayId" />
                     <div class="mb-3">
-                        <label for="displayQty" class="form-label">Enter quantity to display:</label>
-                        <input type="number" class="form-control" name="quantityToDisplay" id="displayQty" min="1" required />
+                        <label for="displayQty" class="form-label">No. of item/s to release:</label>
+                        <input type="number" class="form-control" name="quantityToRelease" id="displayQty" min="1" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason</label>
+                        <input type="text" class="form-control" name="reason" maxlength="30" id="reason" required placeholder="e.g. Item expired." />
                     </div>
                     <div id="displayItemName" class="fw-bold text-center"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success">Confirm Display</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add To POS Confirmation Modal -->
+<div class="modal fade" id="addToPosModal" tabindex="-1" aria-labelledby="addToPosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" id="addToPosForm" asp-controller="POS" asp-action="AddToPosItems">
+            @Html.AntiForgeryToken()
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="addToPosModalLabel">Add to POS</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Hidden field for item id -->
+                    <input type="hidden" name="id" id="posItemId" />
+
+                    <!-- Quantity input -->
+                    <div class="mb-3">
+                        <label for="posQty" class="form-label">No. of item/s to add to POS: </label>
+                        <input type="number" class="form-control" name="quantityToDisplay" id="posQty" min="1" required />
+                    </div>
+
+                    <!-- Display product name -->
+                    <div id="posItemName" class="fw-bold text-center"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Confirm Add</button>
                 </div>
             </div>
         </form>
@@ -259,15 +268,17 @@
                 const name = $(this).data('name');
                 const weight = $(this).data('weight');
 
-                $('#toastItemName').text(name + " (" + weight + ")");
-                const toastEl = new bootstrap.Toast(document.getElementById('confirmToast'));
-                toastEl.show();
+                $('#toastItemName').text(name);
+
+                const modal = new bootstrap.Modal(document.getElementById('confirmToast'));
+                modal.show();
             });
 
             $('#confirmDeleteBtn').click(function () {
                 $('#deleteId').val(deleteId);
                 $('#deleteForm').submit();
             });
+
 
             // Mark as Sold flow
             $('.mark-sold-btn').click(function () {
@@ -294,7 +305,19 @@
                 modal.show();
             });
 
-            // Optional: Add form validation for display quantity here
+            // Add to POS flow
+            $('.add-to-pos-btn').click(function () {
+                posId = $(this).data('id');
+                const name = $(this).data('name');
+
+                $('#posItemId').val(posId);
+                $('#posItemName').text(name);
+                $('#posQty').val(1);
+
+                const modal = new bootstrap.Modal(document.getElementById('addToPosModal'));
+                modal.show();
+            });
         });
     </script>
+
 }

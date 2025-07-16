@@ -5,8 +5,8 @@ namespace InventoryApp.Core.Models
     {
         public int Id { get; set; }
         public DateTime Date { get; set; }
-        public required string Description { get; set; }
-        public ExpenseCategory Category { get; set; }
+        public string? Description { get; set; }
+        public ExpenseCategory? Category { get; set; }
         public decimal Amount { get; set; }
         public string? Notes { get; set; }
 
@@ -20,7 +20,7 @@ namespace InventoryApp.Core.Models
         public DateTime DateCreated { get; set; } = DateTime.Now;
 
         [Display(Name = "Created By")]
-        public string CreatedBy { get; set; } = "System";
+        public string? CreatedBy { get; set; }
     }
 }
 

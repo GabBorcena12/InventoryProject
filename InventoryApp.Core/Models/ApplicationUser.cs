@@ -6,5 +6,6 @@ namespace InventoryApp.Core.Models
     {
         // Custom fields
         public bool IsConfirmed { get; set; } = false;
+        public bool IsDisabled { get; set; } = false;
     }
 }

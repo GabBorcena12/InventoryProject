@@ -1,13 +1,15 @@
-﻿using InventoryApp.DbContext;
+﻿using InventoryApp.Core.Models;
+using InventoryApp.DbContext;
 using InventoryApp.DbContext.Data_Seeder;
-using InventoryApp.Core.Models;
+using InventoryApp.MVC.Service;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(); 
+builder.Services.AddScoped<InventoryService>();
 
 // Database: SQL Server with retry policy
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -50,6 +52,15 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Lockout.AllowedForNewUsers = true;
 
     options.SignIn.RequireConfirmedEmail = false;
+});
+
+// cookie lifetime & behavior (MUST be before Build)
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
 // Session support

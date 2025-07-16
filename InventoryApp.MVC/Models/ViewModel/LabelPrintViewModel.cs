@@ -24,9 +24,8 @@ namespace InventoryApp.Models
         [Display(Name = "Selling Price")]
         public decimal SellingPrice { get; set; }
 
-        [Required(ErrorMessage = "Please enter the batch number.")]
-        [Display(Name = "Batch No.")]
-        public string BatchNumber { get; set; }
+        [Display(Name = "SKU")]
+        public string SKU { get; set; }
 
         [Required(ErrorMessage = "Please specify how many labels to print.")]
         [Range(1, 1000, ErrorMessage = "Number of labels must be between 1 and 1000.")]

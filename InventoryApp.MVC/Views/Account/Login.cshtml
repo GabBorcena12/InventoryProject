@@ -33,6 +33,12 @@
             <div class="d-grid">
                 <button type="submit" class="btn btn-success btn-lg">Sign In</button>
             </div>
+            <div class="text-center mt-2">
+                <span class="text-muted">No account yet? </span>
+                <a asp-controller="Account" asp-action="Register" class="text-success fw-semibold">
+                    Register now
+                </a>
+            </div>
 
             @if (ViewBag.Error != null)
             {

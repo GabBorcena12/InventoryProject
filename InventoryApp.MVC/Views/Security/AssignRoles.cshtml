@@ -1,38 +1,90 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using Microsoft.EntityFrameworkCore
-@model List<InventoryApp.Core.Models.ApplicationUser>
-@inject RoleManager<IdentityRole> RoleManager
+﻿@model List<InventoryApp.MVC.Models.ViewModel.UserWithRolesViewModel>
 @{
     ViewData["Title"] = "Assign Roles";
-    var roles = await RoleManager.Roles.ToListAsync();
 }
-
-<h2 class="my-4">Assign Roles</h2>
-<table class="table table-bordered table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Email</th>
-            <th>Assign Role</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model)
-        {
-            <tr>
-                <td>@user.Email</td>
-                <td>
-                    <form asp-action="AssignRole" method="post" class="d-flex gap-2">
-                        <input type="hidden" name="userId" value="@user.Id" />
-                        <select name="role" class="form-select w-auto">
-                            @foreach (var role in roles)
+<div class="container mt-4">
+    <h2>@ViewData["Title"]</h2>
+    <p class="text-muted mb-3">
+        Manage user roles. You can view assigned roles, add new roles, or remove existing ones based on your access level.
+    </p>
+    
+    @if (Model != null && Model.Any())
+    {
+        <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Current Roles</th>
+                        <th>Assign New Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var user in Model)
+                {
+            
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>
+                            @if (user.IsDisabled)
                             {
-                                <option value="@role.Name">@role.Name</option>
+                                <span class="badge bg-danger">Disabled</span>
+                                <form asp-action="EnableAccount" method="post" class="d-inline">
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-success ms-2">
+                                        <i class="bi bi-unlock"></i> Enable
+                                    </button>
+                                </form>
                             }
-                        </select>
-                        <button class="btn btn-secondary btn-sm">Assign</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                            else
+                            {
+                                <span class="badge bg-success">Active</span>
+                                <form asp-action="DisableAccount" method="post" class="d-inline">
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger ms-2">
+                                        <i class="bi bi-lock"></i> Disable
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                        <td>
+                            @foreach (var role in user.Roles)
+                            {
+                                <form asp-action="RemoveRole" method="post" class="d-inline">
+                                    <input type="hidden" name="userId" value="@user.UserId" />
+                                    <input type="hidden" name="role" value="@role" />
+                                    <div class="d-inline-flex align-items-center border rounded-pill px-3 py-1 me-2">
+                                        <span class="me-2 text-dark fw-semibold">@role</span>
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger p-0 border-0 d-flex align-items-center justify-content-center"
+                                                title="Remove role">
+                                            <i class="bi bi-x fs-5"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                            }
+                        </td>
+                        <td>
+                            <form asp-action="AssignRole" method="post" class="d-flex">
+                                <input type="hidden" name="userId" value="@user.UserId" />
+                                <select name="role" class="form-select me-2">
+                                    @foreach (var role in user.AssignableRoles.Except(user.Roles))
+                                    {
+                                        <option value="@role">@role</option>
+                                    }
+                                </select>
+                                <button type="submit" class="btn btn-outline-success">Assign</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">No records found.</div>
+    }
+
+
+</div>

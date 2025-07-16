@@ -1,0 +1,166 @@
+﻿@model InventoryApp.Core.Models.PosModels.Discount
+@{
+    ViewData["Title"] = "Edit Discount";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3">@ViewData["Title"]</h2>
+
+    <form asp-action="EditDiscount" method="post" class="row g-3 needs-validation">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="id" />
+
+        <!-- Discount SKU -->
+        <div class="col-12 col-md-6">
+            <label asp-for="discountSKU" class="form-label fw-semibold"></label>
+            <input asp-for="discountSKU" class="form-control" readonly />
+            <small class="text-muted">Auto-generated unique code for this discount.</small>
+            <span asp-validation-for="discountSKU" class="text-danger"></span>
+        </div>
+
+        <!-- Discount Type -->
+        <div class="col-12 col-md-6">
+            <label asp-for="skuDiscountType" class="form-label fw-semibold"></label>
+            <select asp-for="skuDiscountType" class="form-select" id="skuDiscountType">
+                <option value="">-- Select Type --</option>
+                <option value="REGULAR DISCOUNT">Regular Discount</option>
+                <option value="BUY&TAKE">Buy &amp; Take Discount</option>
+            </select>
+            <small class="text-muted">Choose the discount type.</small>
+            <span asp-validation-for="skuDiscountType" class="text-danger"></span>
+        </div>
+
+        <!-- Related SKU -->
+        <div class="col-12 col-md-6">
+            <label asp-for="relatedSKU" class="form-label fw-semibold"></label>
+            <select asp-for="relatedSKU" class="form-select" id="relatedSKU">
+                <option value="">-- Select Product --</option>
+                @foreach (var product in ViewBag.Products)
+                {
+                    <option value="@product.Value" data-name="@product.Text">
+                        @product.Text
+                    </option>
+                }
+            </select>
+            <small class="text-muted">Select the product that this discount applies to.</small>
+            <span asp-validation-for="relatedSKU" class="text-danger"></span>
+        </div>
+
+
+        <!-- Discount Name -->
+        <div class="col-12 col-md-6">
+            <label asp-for="name" class="form-label fw-semibold"></label>
+            <input asp-for="name" class="form-control" placeholder="Toei Cat Tuna 250g Buy1Take1" readonly id="name" />
+            <small class="text-muted">A descriptive name (e.g., 10% OFF, Buy 1 Take 1).</small>
+            <span asp-validation-for="name" class="text-danger"></span>
+        </div>
+
+        <!-- Amount Type -->
+        <div class="col-12 col-md-6 regular-fields">
+            <label asp-for="amountType" class="form-label fw-semibold"></label>
+            <select asp-for="amountType" class="form-select" id="amountType">
+                <option value="">-- Select Amount Type --</option>
+                <option value="amount">Amount</option>
+                <option value="percent">Percentage</option>
+            </select>
+            <small class="text-muted">Select whether this is a fixed amount or a percentage.</small>
+            <span asp-validation-for="amountType" class="text-danger"></span>
+        </div>
+
+        <!-- Buy Quantity -->
+        <div class="col-12 col-md-6 buytake-fields">
+            <label asp-for="buyQty" class="form-label fw-semibold"></label>
+            <input asp-for="buyQty" type="number" min="1" class="form-control" id="buyQty" />
+            <small class="text-muted">How many items must be bought.</small>
+            <span asp-validation-for="buyQty" class="text-danger"></span>
+        </div>
+
+        <!-- Take Quantity -->
+        <div class="col-12 col-md-6 buytake-fields">
+            <label asp-for="takeQty" class="form-label fw-semibold"></label>
+            <input asp-for="takeQty" type="number" min="1" class="form-control" id="takeQty" />
+            <small class="text-muted">How many free items the customer gets.</small>
+            <span asp-validation-for="takeQty" class="text-danger"></span>
+        </div>
+
+        <!-- Amount -->
+        <div class="col-12 col-md-6">
+            <label asp-for="amount" class="form-label fw-semibold"></label>
+            <input asp-for="amount" type="number" min="1" class="form-control" id="amount" />
+            <small class="text-muted">Enter the discount value (amount or percentage).</small>
+            <span asp-validation-for="amount" class="text-danger"></span>
+        </div>
+
+        <!-- Is Active -->
+        <div class="col-12 col-md-6 d-flex align-items-center">
+            <div class="form-check">
+                <input asp-for="isActive" class="form-check-input" />
+                <label asp-for="isActive" class="form-check-label"></label>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-12 d-flex justify-content-end mt-3">
+            <a asp-action="DiscountList" class="btn btn-secondary me-2">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">Update Discount</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleFields() {
+            let type = $("#skuDiscountType").val();
+            $(".regular-fields").toggle(type === "REGULAR DISCOUNT");
+            $(".buytake-fields").toggle(type === "BUY&TAKE");
+            updateDiscountName();
+        }
+
+
+        function updateDiscountName() {
+            let fullText = $("#relatedSKU option:selected").data("name") || "";
+            // Encode HTML to prevent any injection or breaking the markup
+            fullText = $("<div>").text(fullText).html();
+
+            let productText = fullText.split(" - ").slice(1).join(" - ");
+            let discountType = $("#skuDiscountType").val();
+            let amountType = $("#amountType").val();
+            let amount = $("#amount").val();
+            let buyQty = $("#buyQty").val();
+            let takeQty = $("#takeQty").val();
+
+            let name = "";
+
+            if (discountType === "REGULAR DISCOUNT") {
+                if (amountType === "amount" && amount) {
+                    name = `₱${parseFloat(amount)} off - ${productText}`;
+                } else if (amountType === "percent" && amount) {
+                    name = `${parseFloat(amount)}% off - ${productText}`;
+                }
+            } else if (discountType === "BUY&TAKE") {
+                if (buyQty && takeQty) {
+                    name = `Buy ${buyQty} Take ${takeQty} - ${productText}`;
+                }
+            }
+
+            $("#name").val(name);
+        }
+
+        $(document).ready(function () {
+            // Set initial dropdown selections from model
+            $("#skuDiscountType").val("@Html.Raw(Model.skuDiscountType)");
+            $("#relatedSKU").val("@Html.Raw(Model.relatedSKU)");
+            $("#amountType").val("@Html.Raw(Model.amountType)");
+
+            toggleFields();
+
+            $("#skuDiscountType, #relatedSKU, #amountType, #amount, #buyQty, #takeQty")
+                .on("change keyup", updateDiscountName);
+
+            $("#skuDiscountType").change(toggleFields);
+        });
+
+    </script>
+}

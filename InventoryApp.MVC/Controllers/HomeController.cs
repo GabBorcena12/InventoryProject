@@ -1,4 +1,5 @@
-﻿using InventoryApp.Core.Models;
+﻿using InventoryApp.Core.Authorizations;
+using InventoryApp.Core.Models;
 using InventoryApp.DbContext;
 using InventoryApp.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InventoryApp.Controllers
 {
-    [Authorize(Roles = "Admin,User")]
     public class HomeController : BaseController
     {
 
@@ -19,8 +19,10 @@ namespace InventoryApp.Controllers
             _logger = logger;
             _context = context;
         }
-        
+
         #region Public
+
+        [Authorize(Roles = RoleConstants.AllRoles)]
         public IActionResult Index()
         {
             var username = HttpContext.Session.GetString("_Username");
@@ -28,6 +30,8 @@ namespace InventoryApp.Controllers
                 return RedirectToAction("Login", "Account");
             return View();
         }
+
+        [Authorize(Roles = RoleConstants.InventoryRoles)]
         public async Task<IActionResult> Dashboard()
         {
             var data = await GetDashboardData();
@@ -53,7 +57,7 @@ namespace InventoryApp.Controllers
             // Sales per product
             var salesData = await _context.Sales
                 .Include(s => s.Inventory).ThenInclude(i => i.product)
-                .Include(s => s.RepackItem).ThenInclude(r => r.product)
+                .Include(s => s.repackItem).ThenInclude(r => r.product)
                 .Where(s => s.DateSold.Year == DateTime.Now.Year)
                 .ToListAsync();
 
@@ -62,7 +66,7 @@ namespace InventoryApp.Controllers
 
             foreach (var sale in salesData)
             {
-                var product = sale.Inventory?.product ?? sale.RepackItem?.product;
+                var product = sale.Inventory?.product ?? sale.repackItem?.product;
                 if (product == null) continue;
 
                 string name = product.ProductName;

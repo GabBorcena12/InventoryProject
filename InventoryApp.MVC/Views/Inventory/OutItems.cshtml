@@ -5,6 +5,40 @@
     var totalQuantity = Model.Sum(s => s.Quantity);
     var totalAmount = Model.Sum(s => s.TotalPrice);
 }
+<style>
+    .modal-content.width-auto {
+        width: auto !important;
+    }
+
+    .modal-dialog {
+        display: flex;
+        justify-content: center; /* center horizontally */
+        align-items: center; /* center vertically */
+        min-height: 100vh; /* full viewport height */
+    }
+
+    .modal-content {
+        width: auto; /* shrink to fit content */
+        max-width: 600px; /* optional: set a limit */
+        margin: auto; /* ensure it's centered */
+    }
+
+    .modal-body {
+        max-height: 60vh; /* limit height relative to viewport */
+        overflow-y: auto; /* allow vertical scroll */
+        scrollbar-width: none; /* hide scrollbar in Firefox */
+        -ms-overflow-style: none; /* hide scrollbar in IE/Edge */
+    }
+
+        .modal-body::-webkit-scrollbar {
+            display: none; /* hide scrollbar in Chrome/Safari */
+        }
+
+    th {
+        text-align: left !important;
+    }
+
+</style>
 
 <div class="container mt-4">
     <h2>Released Items</h2>
@@ -44,11 +78,11 @@
             <thead>
                 <tr>
                     <th>Date Released</th>
-                    <th>Batch No.</th>
+                    <th>Batch Number</th>
                     <th>Repack Item</th>
                     <th class="text-end">Quantity</th>
-                    <th class="text-end">Total Price</th>
-                    <th>Sales Channel</th>
+                    <th class="text-end">Total Loss</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -57,10 +91,22 @@
                     <tr>
                         <td>@sale.DateSold.ToString("yyyy-MM-dd HH:mm")</td>
                         <td>@sale.Inventory?.BatchNo</td>
-                        <td>@sale.RepackItem?.QuantityValue @sale.RepackItem?.product?.UnitOfMeasure @sale.RepackItem?.product?.ProductName</td>
+                        <td>@sale.repackItem?.VariantCode</td>
                         <td class="text-end">@sale.Quantity Piece@((sale.Quantity > 1) ? "s" : "")</td>
                         <td class="text-end">@sale.TotalPrice.ToString("N2")</td>
-                        <td>@sale.SalesChannel</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary print-release"
+                                    data-date="@sale.DateSold.ToString("yyyy-MM-dd HH:mm")"
+                                    data-batch="@sale.Inventory?.BatchNo"
+                                    data-item="@sale.repackItem?.VariantCode"
+                                    data-qty="@sale.Quantity"
+                                    data-total="@sale.TotalPrice"
+                                    data-soldby="@sale.SoldBy"
+                                    data-reason="@sale.Reason">
+                                <i class="bi bi-receipt"></i> Print Release
+                            </button>
+                        </td>
+
                     </tr>
                 }
             </tbody>
@@ -94,4 +140,85 @@
         <div class="alert alert-warning">No records found.</div>
     }
 </div>
+<!-- Released Item Modal -->
+<div class="modal fade" id="releaseMemoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content width-auto p-3">
+            <div class="modal-header">
+                <h5 class="modal-title">Released Item Receipt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="releaseMemoContent" style="font-family: Consolas, monospace; font-size:14px; white-space:pre-wrap;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btnReprintRelease" class="btn btn-primary">Reprint Release Memo</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $(".print-release").click(function () {
+                const releaseData = {
+                    date: $(this).data("date"),
+                    batch: $(this).data("batch"),
+                    item: $(this).data("item"),
+                    qty: $(this).data("qty"),
+                    total: parseFloat($(this).data("total")),
+                    soldBy: $(this).data("soldby"),
+                    reason: $(this).data("reason")
+                };
 
+                const memoText = formatReleaseMemo(releaseData);
+
+                $("#releaseMemoContent").text(memoText);
+                $("#releaseMemoModal").modal("show");
+            });
+
+            $("#btnReprintRelease").click(function () {
+                const memoText = $("#releaseMemoContent").text();
+                const printWindow = window.open('', '', 'height=600,width=400');
+                printWindow.document.write('<pre style="font-family: Consolas, monospace; font-size:14px;">' + memoText + '</pre>');
+                printWindow.document.close();
+                printWindow.print();
+            });
+
+            function formatReleaseMemo(memo, options = {}) {
+                const {
+                    businessName = "Anjey's Pet Supplies",
+                    businessAddress = "BLK 16, San Jose Del Monte Heights, Muzon East",
+                    tin = "123-456-789-000",
+                    footer = "Thank you! This serves as your release memo."
+                } = options;
+
+                const pad = (text = "", width = 50, align = "left") => {
+                    if (text.length >= width) return text.slice(0, width);
+                    if (align === "right") return text.padStart(width);
+                    if (align === "center") return text.padStart(Math.floor((width + text.length) / 2)).padEnd(width);
+                    return text.padEnd(width);
+                };
+
+                const lines = [];
+                lines.push(pad("RELEASE MEMO", 50, "center"));
+                lines.push(pad(businessName.toUpperCase(), 50, "center"));
+                lines.push(pad(businessAddress, 50, "center"));
+                lines.push(pad(`TIN: ${tin}`, 50, "center"));
+                lines.push("-".repeat(50));
+                lines.push(pad(`Date Released: ${memo.date}`, 50));
+                lines.push(pad(`Released By: ${memo.soldBy}`, 50));
+                lines.push(pad(`Batch #: ${memo.batch || "N/A"}`, 50));
+                lines.push("-".repeat(50));
+                lines.push(`Item: ${memo.item}`);
+                lines.push(`Qty: ${memo.qty}`);
+                lines.push(`Total Cost: ₱${memo.total.toFixed(2)}`);
+                lines.push(`Reason: ${memo.reason}`);
+                lines.push("-".repeat(50));
+                lines.push(pad(footer, 50, "center"));
+                return lines.join("\n");
+            }
+        });
+    </script>
+}

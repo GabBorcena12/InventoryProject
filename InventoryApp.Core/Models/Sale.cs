@@ -8,19 +8,22 @@
         public Inventory? Inventory { get; set; }
 
         public int? RepackItemId { get; set; }
-        public RepackItem? RepackItem { get; set; }
+        public RepackItem? repackItem { get; set; }
 
         public int? DisplayItemId { get; set; }
-        public DisplayItem? DisplayItem { get; set; }
+        public DisplayItem? displayItem { get; set; }
 
         public int Quantity { get; set; }
         public decimal TotalPrice { get; set; }
-
+        
         public string SalesChannel { get; set; }
 
-        public string CreatedBy { get; set; } = "System";
+        public DateTime DateSold { get; set; }
 
-        public DateTime DateSold { get; set; } = DateTime.Now;
+        public string SoldBy { get; set; }
+
+        public string? Reason { get; set; }
+
         public bool IsDeleted { get; set; } = false;
     }
 }

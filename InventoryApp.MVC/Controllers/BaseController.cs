@@ -27,7 +27,7 @@ namespace InventoryApp.Controllers
             {
                 Action = action,
                 EntityName = entity,
-                EntityId = entityId,
+                EntityId = entityId ?? "",
                 Description = description,
                 PerformedBy = ViewBag.Username ?? User?.Identity?.Name ?? "System"
             };
@@ -35,5 +35,19 @@ namespace InventoryApp.Controllers
             _context.AuditLogs.Add(log);
         }
 
+        protected async Task<string> CaptureModelValidationErrorsAsync(string module, string action, string status, int id, string name)
+        {
+            var allErrors = new List<string>();
+
+            foreach (var key in ModelState.Keys)
+            {
+                var state = ModelState[key];
+                foreach (var error in state.Errors)
+                {
+                    allErrors.Add($"[{key}] {error.ErrorMessage}");
+                }
+            }
+            return string.Join("; ", allErrors);
+        }
     }
 }

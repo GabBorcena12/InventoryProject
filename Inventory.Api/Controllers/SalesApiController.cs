@@ -29,9 +29,9 @@ namespace Inventory.API.Controllers
         public async Task<ActionResult<IEnumerable<SaleDto>>> GetAllSales()
         {
             var sales = await _context.Sales
-                .Include(s => s.RepackItem).ThenInclude(r => r.product)
+                .Include(s => s.repackItem).ThenInclude(r => r.product)
                 .Include(s => s.Inventory).ThenInclude(i => i.product)
-                .Include(s => s.DisplayItem)
+                .Include(s => s.displayItem)
                 .Where(s => !s.IsDeleted)
                 .OrderByDescending(s => s.DateSold)
                 .ToListAsync();
@@ -54,9 +54,9 @@ namespace Inventory.API.Controllers
         public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDate(DateTime from, DateTime to)
         {
             var sales = await _context.Sales
-                .Include(s => s.RepackItem).ThenInclude(r => r.product)
+                .Include(s => s.repackItem).ThenInclude(r => r.product)
                 .Include(s => s.Inventory).ThenInclude(i => i.product)
-                .Include(s => s.DisplayItem)
+                .Include(s => s.displayItem)
                 .Where(s => !s.IsDeleted && s.DateSold.Date >= from.Date && s.DateSold.Date <= to.Date)
                 .OrderByDescending(s => s.DateSold)
                 .ToListAsync();
@@ -87,7 +87,7 @@ namespace Inventory.API.Controllers
                 TotalPrice = dto.TotalPrice,
                 SalesChannel = dto.SalesChannel,
                 DateSold = DateTime.Now,
-                CreatedBy = "POS"
+                SoldBy = "POS"
             };
 
             _context.Sales.Add(sale);

@@ -1,36 +1,47 @@
 ﻿@model List<InventoryApp.Core.Models.ApplicationUser>
 @{
-    ViewData["Title"] = "Unconfirmed Accounts";
+    ViewData["Title"] = "Verify Account";
 }
 
-<h2 class="my-4">Unconfirmed Accounts</h2>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">All accounts are confirmed.</div>
-}
-else
-{
-    <table class="table table-bordered table-hover">
-        <thead class="table-dark">
-            <tr>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in Model)
-            {
-                <tr>
-                    <td>@user.Email</td>
-                    <td>
-                        <form asp-action="ConfirmAccount" method="post">
-                            <input type="hidden" name="id" value="@user.Id" />
-                            <button class="btn btn-success btn-sm">Confirm Email</button>
-                        </form>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="container mt-4">
+    <h2>@ViewData["Title"]</h2>
+    <p class="text-muted mb-3">
+        Verify a user’s account to confirm their identity and activate access. This ensures that only validated accounts can use the system.
+    </p>
+    @if (Model != null && Model.Any())
+    {
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info">All accounts are confirmed.</div>
+        }
+        else
+        {
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.Email</td>
+                            <td>
+                                <form asp-action="ConfirmAccount" method="post">
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <button class="btn btn-success btn-sm">Confirm Email</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">No records found.</div>
+    }    
+</div>

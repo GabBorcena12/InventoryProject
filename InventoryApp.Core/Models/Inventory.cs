@@ -41,24 +41,23 @@ public class Inventory
     public bool IsDeleted { get; set; } = false;
 
     [Required(ErrorMessage = "Product is required")]
-    public int ProductId { get; set; }
-
-    [ValidateNever]
-    public Product product { get; set; }
-
-    public int SupplierId { get; set; }
-    
-    public Supplier? supplier { get; set; }
-
-    [ValidateNever]
-    public ICollection<RepackItem> repackItems { get; set; }
 
     [ValidateNever]
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
             
     [Display(Name = "Total Sold Qty")] 
     public int TotalSold => InitialQuantity - CurrentQty;
+    public int ProductId { get; set; }
 
+    [ValidateNever]
+    public Product product { get; set; }
+
+    public int SupplierId { get; set; }
+
+    public Supplier? supplier { get; set; }
+
+    [ValidateNever]
+    public ICollection<RepackItem> repackItems { get; set; }
 
 }
 

@@ -6,9 +6,6 @@
 <div class="container-fluid m-4">
     <h2 class="mb-4 text-primary fw-bold">@ViewData["Title"]</h2>
 
-    @await Html.PartialAsync("_ToastMessages")
-    @await Html.PartialAsync("_ErrorMessage")
-
     <table class="table table-striped table-bordered align-middle">
         <tbody>
             <tr>
@@ -24,11 +21,11 @@
                 <td>@Model.product?.ProductName</td>
             </tr>
             <tr>
-                <th scope="row" class="table-primary">Cost per Unit</th>
+                <th scope="row" class="table-primary">Purchase Cost</th>
                 <td>₱@Model.CostPerUnit.ToString("N2")</td>
             </tr>
             <tr>
-                <th scope="row" class="table-primary">Price per Unit</th>
+                <th scope="row" class="table-primary">Selling Price</th>
                 <td>₱@Model.PricePerUnit.ToString("N2")</td>
             </tr>
             <tr>
@@ -36,7 +33,7 @@
                 <td>@Model.InitialQuantity @Model.product?.UnitOfMeasure</td>
             </tr>
             <tr>
-                <th scope="row" class="table-primary">Current Quantity</th>
+                <th scope="row" class="table-primary">Available Quantity</th>
                 <td>@Model.CurrentQty @Model.product?.UnitOfMeasure</td>
             </tr>
             <tr>

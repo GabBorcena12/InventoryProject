@@ -23,7 +23,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-1">
         <h2>Inventory List</h2>
-        <a asp-action="CreateInventory" class="btn btn-success">Add Inventory</a>
+        <a asp-action="CreateInventory" class="btn btn-success"><i class="bi bi-plus"></i>Add Inventory</a>
     </div>
     <p class="text-muted mb-3">
         Provides an overview of all products and repackaged items in stock, including quantities, unit costs, and supplier information.
@@ -46,20 +46,16 @@
         </div>
     </form>
 
-    @await Html.PartialAsync("_ToastMessages")
-    @await Html.PartialAsync("_ErrorMessage")
-
     @if (Model != null && Model.Any())
     {
         <table class="table table-bordered table-striped table-responsive">
-            <thead class="table-dark">
+            <thead>
                 <tr>
-                    <th><a href="@GetSortUrl("BatchNo")" class="text-white text-decoration-none">Batch No</a></th>
+                    <th><a href="@GetSortUrl("BatchNo")" class="text-white text-decoration-none">Batch Number</a></th>
                     <th><a href="@GetSortUrl("ProductName")" class="text-white text-decoration-none">Product Name</a></th>
                     <th>Order Qty</th>
                     <th>Stock Qty</th>
-                    <th>Cost Per Unit</th>
-                    <th>Price Per Unit</th>
+                    <th>Purchase Cost</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -87,7 +83,6 @@
                             @item.CurrentQty @unit@pluralSuffix
                         </td>
                         <td>@item.CostPerUnit.ToString("N2")</td>
-                        <td>@item.PricePerUnit.ToString("N2")</td>
                         <td>
                             @{
                                 var status = "";
@@ -111,18 +106,23 @@
                             <span class="@cssClass">@status</span>
                         </td>
                         <td>
-                            <a asp-action="ViewInventory" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">View Details</a>
-                            <a asp-action="Repack" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-1">Prepare Item</a>
-                            @if (item.repackItems == null || !item.repackItems.Any())
-                            {
-                                <button type="button" class="btn btn-sm btn-danger delete-btn"
-                                        data-id="@item.Id"
-                                        data-name="@item.product?.ProductName">
-                                    Delete
-                                </button>
-                            }
+                            <div class="d-flex flex-wrap gap-1">
+                                <a asp-action="ViewInventory" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+                                <a asp-action="Repack" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1">
+                                    <i class="bi bi-box-seam"></i> Prepare Stocks
+                                </a>
+                                @if (item.repackItems == null || !item.repackItems.Any())
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
+                                            data-id="@item.Id"
+                                            data-name="@item.product?.ProductName">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                }
+                            </div>
                         </td>
-
                     </tr>
                 }
             </tbody>
@@ -161,21 +161,26 @@
     <input type="hidden" name="id" id="deleteId" />
 </form>
 
-<!-- Confirmation Toast -->
-<div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1080;">
-    <div id="confirmToast" class="toast bg-warning text-dark" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-body m-1">
-            Are you sure you want to delete <strong id="toastItemName"></strong>?
-        </div>
-        <div class="d-flex justify-content-center mt-2 mb-2">
-            <button type="button" class="btn btn-sm btn-danger me-2" id="confirmDeleteBtn">Yes</button>
-            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="toast">Cancel</button>
+<!-- Enable/Disable Product / Delete Inventory Modal -->
+<div class="modal fade" id="confirmToast" tabindex="-1" aria-labelledby="toggleStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="toggleStatusModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to <strong id="toastItemName"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         let deleteId = 0;
 
@@ -184,12 +189,15 @@
                 deleteId = $(this).data('id');
                 const name = $(this).data('name');
                 $('#toastItemName').text(name);
+                $('#confirmDeleteBtn').text('Delete');
 
-                const toastEl = new bootstrap.Toast(document.getElementById('confirmToast'));
-                toastEl.show();
+                // Show Bootstrap modal
+                var modalEl = new bootstrap.Modal(document.getElementById('confirmToast'));
+                modalEl.show();
             });
 
             $('#confirmDeleteBtn').click(function () {
+                // Set hidden input and submit form
                 $('#deleteId').val(deleteId);
                 $('#deleteForm').submit();
             });

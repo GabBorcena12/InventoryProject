@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-1">
         <h2>Product List</h2>
-        <a class="btn btn-success" asp-action="CreateProduct">Add Product</a>
+        <a class="btn btn-success" asp-action="CreateProduct"><i class="bi bi-plus"></i>Add Product</a>
     </div>
     <p class="text-muted mb-3">
         Shows all available products in the system with relevant details such as unit, volume, and category for inventory and sales tracking.
@@ -20,8 +20,6 @@
             <button type="submit" class="btn btn-primary w-100">Filter</button>
         </div>
     </form>
-    @await Html.PartialAsync("_ToastMessages")
-    @await Html.PartialAsync("_ErrorMessage")
 
     @if (Model != null && Model.Any())
     {
@@ -30,9 +28,7 @@
                 <tr>
                     <th>Product Name</th>
                     <th>Product Alias</th>
-                    <th>Volume</th>
                     <th>Unit of Measure</th>
-                    <th>Reorder Level</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -42,19 +38,53 @@
                     <tr>
                         <td>@product.ProductName</td>
                         <td>@product.ProductAlias</td>
-                        <td>@product.Volume</td>
                         <td>@product.UnitOfMeasure</td>
-                        <td>@product.RestockThreshold</td>
                         <td>
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#disableConfirmModal"
-                                    data-product-id="@product.Id"
-                                    data-product-name="@product.ProductName">
-                                Disable
-                            </button>
+                            <div class="d-flex flex-wrap gap-1">
+                                <!-- Manage Product -->
+                                <a class="btn btn-sm btn-outline-primary"
+                                   asp-action="EditProduct"
+                                   asp-route-id="@product.Id">
+                                    <i class="bi bi-pencil-square me-1"></i> Manage Product
+                                </a>
+
+                                @if (!product.IsDisabled)
+                                {
+                                    <!-- Disable button -->
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#disableConfirmModal"
+                                            data-product-id="@product.Id"
+                                            data-product-name="@product.ProductName">
+                                        <i class="bi bi-slash-circle me-1"></i> Disable
+                                    </button>
+                                }
+                                else
+                                {
+                                    <!-- Enable button -->
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-success"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#enableConfirmModal"
+                                            data-product-id="@product.Id"
+                                            data-product-name="@product.ProductName">
+                                        <i class="bi bi-check-circle me-1"></i> Enable
+                                    </button>
+                                }
+
+                                <!-- Delete button -->
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteConfirmModal"
+                                        data-product-id="@product.Id"
+                                        data-product-name="@product.ProductName">
+                                    <i class="bi bi-trash me-1"></i> Delete
+                                </button>
+                            </div>
                         </td>
+
                     </tr>
                 }
             </tbody>
@@ -83,6 +113,49 @@
         <div class="alert alert-warning mt-3">No records found.</div>
     }
 </div>
+<!-- Enable Confirmation Modal -->
+<div class="modal fade" id="enableConfirmModal" tabindex="-1" aria-labelledby="enableConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="enableConfirmModalLabel">Confirm Enable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                Are you sure you want to enable <strong id="enableModalProductName"></strong>?
+            </div>
+            <div class="modal-footer justify-content-center">
+                <form id="enableProductForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">Yes, Enable</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                Are you sure you want to permanently delete <strong id="deleteModalProductName"></strong>?
+            </div>
+            <div class="modal-footer justify-content-center">
+                <form id="deleteProductForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Disable Confirmation Modal -->
 <div class="modal fade" id="disableConfirmModal" tabindex="-1" aria-labelledby="disableConfirmModalLabel" aria-hidden="true">
@@ -108,17 +181,34 @@
 
 @section Scripts {
     <script>
-        const modal = document.getElementById('disableConfirmModal');
-        modal.addEventListener('show.bs.modal', function (event) {
+        // Disable modal
+        const disableModal = document.getElementById('disableConfirmModal');
+        disableModal.addEventListener('show.bs.modal', function (event) {
             const button = event.relatedTarget;
-            const productName = button.getAttribute('data-product-name');
-            const productId = button.getAttribute('data-product-id');
+            const name = button.getAttribute('data-product-name');
+            const id = button.getAttribute('data-product-id');
+            disableModal.querySelector('#modalProductName').textContent = name;
+            disableModal.querySelector('#disableProductForm').action = `/Inventory/DisableProduct/${id}`;
+        });
 
-            modal.querySelector('#modalProductName').textContent = productName;
+        // Enable modal
+        const enableModal = document.getElementById('enableConfirmModal');
+        enableModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const name = button.getAttribute('data-product-name');
+            const id = button.getAttribute('data-product-id');
+            enableModal.querySelector('#enableModalProductName').textContent = name;
+            enableModal.querySelector('#enableProductForm').action = `/Inventory/EnableProduct/${id}`;
+        });
 
-            // Set form action dynamically to call /Inventory/DisableProduct/{id}
-            const form = modal.querySelector('#disableProductForm');
-            form.action = `/Inventory/DisableProduct/${productId}`;
+        // Delete modal
+        const deleteModal = document.getElementById('deleteConfirmModal');
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const name = button.getAttribute('data-product-name');
+            const id = button.getAttribute('data-product-id');
+            deleteModal.querySelector('#deleteModalProductName').textContent = name;
+            deleteModal.querySelector('#deleteProductForm').action = `/Inventory/DeleteProduct/${id}`;
         });
     </script>
 }

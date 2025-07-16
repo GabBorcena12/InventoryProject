@@ -32,5 +32,8 @@ namespace InventoryApp.Core.Models
         [Display(Name = "Date Created")]
         public DateTime DateCreated { get; set; } = DateTime.Now;
         public bool IsDeleted { get; set; } = false;
+
+        public string? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; } = DateTime.Now;
     }
 }

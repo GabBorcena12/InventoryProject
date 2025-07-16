@@ -1,0 +1,168 @@
+﻿@model List<InventoryApp.Core.Models.PosModels.Product>
+@{
+    ViewData["Title"] = "POS Items List";
+    var totalQuantity = Model.Sum(x => x.QtyDisplayed);
+}
+
+<div class="container mt-4">
+    <h2>POS Items</h2>
+    <p class="text-muted mb-3">
+        Displays the list of POS products. Active by default, but you can include inactive items.
+    </p>
+
+    <!-- Filter Form -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <label for="productFilter" class="form-label">Product / SKU:</label>
+            <input type="text" name="productFilter" id="productFilter" class="form-control"
+                   value="@ViewBag.ProductNameFilter" placeholder="Search by name or sku..." />
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+                <input type="checkbox" name="showInactive" id="showInactive" value="true"
+                       class="form-check-input"
+                       @(ViewBag.ShowInactive ? "checked" : "") />
+                <label class="form-check-label" for="showInactive">Show Inactive</label>
+            </div>
+        </div>
+
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary">Apply</button>
+        </div>
+    </form>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Image</th>
+                        <th class="text-start">Product</th>
+                        <th>SKU</th>
+                        <th>Price</th>
+                        <th>Qty Displayed</th>
+                        <th>Qty Sold</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="@(item.IsActive ? "" : "table-secondary")">
+                            <td>
+                                <img src="~/images/@item.ImageUrl" alt="@item.Name" class="img-fluid rounded" style="height:3rem;" />
+                            </td>
+                            <td class="text-start">@item.Name</td>
+                            <td>@item.Sku</td>
+                            <td class="text-center">@item.PricePerKg.ToString("N2")</td>
+                            <td class="text-center">@item.QtyDisplayed Piece/s</td>
+                            <td class="text-center">@item.QtySold Piece/s</td>
+                            <td>
+                            <div class="d-flex flex-wrap justify-content-center gap-1">
+                                <a asp-controller="POS" asp-action="EditProduct" asp-route-id="@item.id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-gear"></i> Manage
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm @(item.IsActive ? "btn-outline-danger" : "btn-outline-success") toggle-status-btn"
+                                        data-id="@item.id"
+                                        data-name="@item.Name"
+                                        data-isactive="@item.IsActive"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#toggleStatusModal">
+                                    <i class="bi @(item.IsActive ? "bi-x-circle" : "bi-check-circle")"></i> 
+                                    @(item.IsActive ? "Disable" : "Enable")
+                                </button>
+                            </div>
+                        </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="table-success fw-bold">
+                        <td colspan="4" class="text-end">Subtotal:</td>
+                        <td class="text-end">@totalQuantity Piece/s</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (ViewBag.TotalItems > ViewBag.PageSize)
+        {
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-4">
+                    @{
+                        var totalPages = (int)Math.Ceiling((decimal)ViewBag.TotalItems / (int)ViewBag.PageSize);
+                        for (int i = 1; i <= totalPages; i++)
+                        {
+                            var active = (i == (int)ViewBag.CurrentPage) ? "active" : "";
+                            <li class="page-item @active">
+                                <a class="page-link"
+                                   href="@Url.Action("ProductList", new { 
+                                       page = i, 
+                                       productFilter = ViewBag.ProductNameFilter, 
+                                       showInactive = ViewBag.ShowInactive 
+                                   })">@i</a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning">No POS items found.</div>
+    }
+</div>
+
+<!-- Toggle Status Modal -->
+<div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-labelledby="toggleStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-controller="POS" asp-action="ToggleProductStatus">
+            @Html.AntiForgeryToken()
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="toggleStatusModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    Are you sure you want to <strong id="modalAction"></strong> product: <strong id="modalProductName"></strong>?
+                    <input type="hidden" id="modalProductId" name="id" />
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="confirmBtn" class="btn btn-danger">Confirm</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('.toggle-status-btn').click(function () {
+                var productId = $(this).data('id');
+                var productName = $(this).data('name');
+                var isActive = $(this).data('isactive') === true || $(this).data('isactive') === "True";
+
+                $('#modalProductId').val(productId);
+                $('#modalProductName').text(productName);
+
+                if (isActive) {
+                    $('#modalAction').text('Disable');
+                    $('#confirmBtn').text('Disable').removeClass('btn-success').addClass('btn-danger');
+                } else {
+                    $('#modalAction').text('Enable');
+                    $('#confirmBtn').text('Enable').removeClass('btn-danger').addClass('btn-success');
+                }
+            });
+        });
+    </script>
+}
