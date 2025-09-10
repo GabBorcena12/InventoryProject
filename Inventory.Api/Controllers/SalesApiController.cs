@@ -24,10 +24,10 @@ namespace Inventory.API.Controllers
             return Ok("Pong");
         }
 
-        // GET: api/SalesApi
-        [HttpGet]
+        // GET: api/SalesApi/all
+        [HttpGet("all")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<SaleDto>>> GetAllSales()
+        public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetAllSales()
         {
             var sales = from a in _context.POSTransactionHeaders
                         join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
@@ -56,8 +56,9 @@ namespace Inventory.API.Controllers
             return Ok(dtoList);
         }
 
-        // GET: api/SalesApi?fromDate=2025-09-01&toDate=2025-09-10
-        [HttpGet]
+        // GET: api/SalesApi/bydaterange?fromDate=2025-09-01&toDate=2025-09-10
+        [HttpGet("bydaterange")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetSalesByDateRange(
             [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate)
@@ -93,6 +94,7 @@ namespace Inventory.API.Controllers
 
         // GET: api/SalesApi/or/OR12345
         [HttpGet("or/{orNumber}")]
+        [Authorize]
         public async Task<ActionResult<TransactionSalesDto>> GetSaleByORNumber(string orNumber)
         {
             var sale = await (from a in _context.POSTransactionHeaders
@@ -115,5 +117,7 @@ namespace Inventory.API.Controllers
 
             return Ok(sale);
         }
+
+
     }
 }

@@ -93,11 +93,6 @@ namespace Inventory.Api
                 c.RoutePrefix = "swagger"; // Access it at /swagger
             });
 
-
-            app.UseHttpsRedirection();
-            app.UseAuthentication();
-            app.UseAuthorization();
-
             app.MapControllers();
             app.UseHttpsRedirection();
             app.UseAuthentication();
