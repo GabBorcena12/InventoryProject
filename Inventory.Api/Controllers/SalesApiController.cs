@@ -1,4 +1,5 @@
-﻿using Inventory.API.Dtos;
+﻿using Inventory.Api.Dtos;
+using Inventory.API.Dtos;
 using InventoryApp.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,72 +29,91 @@ namespace Inventory.API.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<SaleDto>>> GetAllSales()
         {
-            var sales = await _context.Sales
-                .Include(s => s.repackItem).ThenInclude(r => r.product)
-                .Include(s => s.Inventory).ThenInclude(i => i.product)
-                .Include(s => s.displayItem)
-                .Where(s => !s.IsDeleted)
-                .OrderByDescending(s => s.DateSold)
-                .ToListAsync();
+            var sales = from a in _context.POSTransactionHeaders
+                        join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
+                        where !a.IsDeleted
+                            && !b.IsDeleted
+                            && !a.IsVoided
+                        orderby a.TransactionDate descending
+                        select new
+                        {
+                            a.ORNumber,
+                            a.TotalAmount,
+                            a.TransactionDate,
+                            a.CreatedBy,
+                            a.PaymentMethod
+                        };
 
-            var dtoList = sales.Select(s => new SaleDto
+            var dtoList = await sales.Select(s => new TransactionSalesDto
             {
-                Id = s.Id,
-                Quantity = s.Quantity,
-                TotalPrice = s.TotalPrice,
-                SalesChannel = s.SalesChannel,
-                DateSold = s.DateSold
-            });
+                ORNo = s.ORNumber,
+                TransactionDate = s.TransactionDate,
+                CashierName = s.CreatedBy,
+                PaymentMethod = s.PaymentMethod,
+                TotalAmount = s.TotalAmount
+            }).ToListAsync();
 
             return Ok(dtoList);
         }
 
-        // GET: api/SalesApi/date?from=2025-06-01&to=2025-06-20
-        [HttpGet("date")]
-        [Authorize]
-        public async Task<ActionResult<IEnumerable<SaleDto>>> GetSalesByDate(DateTime from, DateTime to)
+        // GET: api/SalesApi?fromDate=2025-09-01&toDate=2025-09-10
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetSalesByDateRange(
+            [FromQuery] DateTime fromDate,
+            [FromQuery] DateTime toDate)
         {
-            var sales = await _context.Sales
-                .Include(s => s.repackItem).ThenInclude(r => r.product)
-                .Include(s => s.Inventory).ThenInclude(i => i.product)
-                .Include(s => s.displayItem)
-                .Where(s => !s.IsDeleted && s.DateSold.Date >= from.Date && s.DateSold.Date <= to.Date)
-                .OrderByDescending(s => s.DateSold)
-                .ToListAsync();
+            var sales = from a in _context.POSTransactionHeaders
+                        join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
+                        where !a.IsDeleted
+                              && !b.IsDeleted
+                              && !a.IsVoided
+                              && a.TransactionDate.Date >= fromDate.Date
+                              && a.TransactionDate.Date <= toDate.Date
+                        orderby a.TransactionDate descending
+                        select new
+                        {
+                            a.ORNumber,
+                            a.TotalAmount,
+                            a.TransactionDate,
+                            a.CreatedBy,
+                            a.PaymentMethod
+                        };
 
-            var dtoList = sales.Select(s => new SaleDto
+            var dtoList = await sales.Select(s => new TransactionSalesDto
             {
-                Id = s.Id,
-                Quantity = s.Quantity,
-                TotalPrice = s.TotalPrice,
-                SalesChannel = s.SalesChannel,
-                DateSold = s.DateSold
-            });
+                ORNo = s.ORNumber,
+                TransactionDate = s.TransactionDate,
+                CashierName = s.CreatedBy,
+                PaymentMethod = s.PaymentMethod,
+                TotalAmount = s.TotalAmount
+            }).ToListAsync();
 
             return Ok(dtoList);
         }
 
-        // POST: api/SalesApi
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> CreateSale([FromBody] SaleDto dto)
+        // GET: api/SalesApi/or/OR12345
+        [HttpGet("or/{orNumber}")]
+        public async Task<ActionResult<TransactionSalesDto>> GetSaleByORNumber(string orNumber)
         {
-            if (dto == null || dto.Quantity <= 0)
-                return BadRequest("Invalid sale data.");
+            var sale = await (from a in _context.POSTransactionHeaders
+                              join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
+                              where !a.IsDeleted
+                                    && !b.IsDeleted
+                                    && !a.IsVoided
+                                    && a.ORNumber == orNumber
+                              select new TransactionSalesDto
+                              {
+                                  ORNo = a.ORNumber,
+                                  TransactionDate = a.TransactionDate,
+                                  CashierName = a.CreatedBy,
+                                  PaymentMethod = a.PaymentMethod,
+                                  TotalAmount = a.TotalAmount
+                              }).FirstOrDefaultAsync();
 
-            var sale = new Sale
-            {
-                Quantity = dto.Quantity,
-                TotalPrice = dto.TotalPrice,
-                SalesChannel = dto.SalesChannel,
-                DateSold = DateTime.Now,
-                SoldBy = "POS"
-            };
+            if (sale == null)
+                return NotFound($"Sale with OR Number '{orNumber}' not found.");
 
-            _context.Sales.Add(sale);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Sale created", id = sale.Id });
+            return Ok(sale);
         }
     }
 }
