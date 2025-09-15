@@ -2,14 +2,14 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy only the API and Core project files
+# Copy project files
 COPY InventoryApp.Core/InventoryApp.Core.csproj InventoryApp.Core/
 COPY Inventory.Api/Inventory.Api.csproj Inventory.Api/
 
 # Restore API project (implicitly restores Core project if referenced)
 RUN dotnet restore Inventory.Api/Inventory.Api.csproj
 
-# Copy full source code needed to build
+# Copy full source code
 COPY InventoryApp.Core/ ./InventoryApp.Core/
 COPY Inventory.Api/ ./Inventory.Api/
 
@@ -19,12 +19,15 @@ RUN dotnet publish Inventory.Api/Inventory.Api.csproj -c Release -o /app/publish
 # Stage 2 - Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
+
+# Copy published output
 COPY --from=build /app/publish .
 
-# Cloud Run requires listening on $PORT (default: 8080)
+# Cloud Run requires listening on $PORT
 ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT}
 
-# Default port Cloud Run expects
+# Expose default Cloud Run port
 EXPOSE 8080
 
+# Run the API
 ENTRYPOINT ["dotnet", "Inventory.Api.dll"]
