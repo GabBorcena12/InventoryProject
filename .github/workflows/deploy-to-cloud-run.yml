@@ -1,0 +1,48 @@
+name: 🚀 Deploy Inventory API to Cloud Run
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  REGION: us-central1
+  REPO: inventory-repo
+  SERVICE_NAME: inventoryapi
+
+jobs:
+  deploy-to-cloud-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧾 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔐 Authenticate with GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: 🔧 Set up gcloud
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: 🆔 Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+    - name: 🐳 Build and push Inventory API image
+      run: |
+        IMAGE_URI=${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:${GITHUB_SHA::7}
+        docker build -t $IMAGE_URI -f Inventory.Api/Dockerfile .
+        docker push $IMAGE_URI
+        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+    - name: 🚀 Deploy to Cloud Run
+      run: |
+        gcloud run deploy ${{ env.SERVICE_NAME }} \
+          --image $IMAGE_URI \
+          --region ${{ env.REGION }} \
+          --platform managed \
+          --allow-unauthenticated \
+          --vpc-connector cloudrun-connector \
+          --vpc-egress all-traffic \
+          --set-env-vars "ConnectionStrings__Default=Server=10.128.0.29;Database=InventoryDb;User Id=sa;Password=${{ secrets.DB_PASSWORD }};TrustServerCertificate=True;"
