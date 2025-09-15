@@ -55,7 +55,7 @@ jobs:
         docker run -d --name mssql --network inventory-net \
           --user root \
           -e "ACCEPT_EULA=Y" \
-          -e "SA_PASSWORD=YourStrong@Passw0rd" \
+          -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
           -v mssql_data:/var/opt/mssql \
           -v /home/$USER/sql_backups:/var/opt/mssql/backup \
           -p 1433:1433 \
@@ -77,7 +77,7 @@ jobs:
 
         echo "🚀 Starting new MVC container..."
         docker run -d --name inventoryapp-mvc --network inventory-net \
-          -e "ConnectionStrings__Default=Server=mssql,1433;Database=InventoryDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;" \
+          -e "ConnectionStrings__Default=Server=mssql,1433;Database=InventoryDb;User Id=sa;Password=${{ secrets.DB_PASSWORD }};TrustServerCertificate=True;" \
           -p 8080:80 $GHCR_REGISTRY/inventoryapp-mvc:latest || rollback
 
         echo "🧹 Cleaning up old/untagged Docker images..."
