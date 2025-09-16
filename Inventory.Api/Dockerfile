@@ -23,11 +23,10 @@ WORKDIR /app
 # Copy published output
 COPY --from=build /app/publish .
 
-# Cloud Run requires listening on $PORT
-ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT}
+# Hard-code the port to 5000
+ENV ASPNETCORE_URLS=http://0.0.0.0:5000
+EXPOSE 5000
 
-# Expose default Cloud Run port
-EXPOSE 8080
 
 # Run the API
 ENTRYPOINT ["dotnet", "Inventory.Api.dll"]
