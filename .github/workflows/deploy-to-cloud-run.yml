@@ -46,7 +46,6 @@ jobs:
             --image $IMAGE_URI \
             --region ${{ env.REGION }} \
             --platform managed \
-            --port 5000 \
             --allow-unauthenticated \
             --vpc-connector cloudrun-connector \
             --vpc-egress all-traffic \
