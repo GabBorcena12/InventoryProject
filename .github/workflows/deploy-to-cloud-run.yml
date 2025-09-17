@@ -49,4 +49,4 @@ jobs:
             --allow-unauthenticated \
             --vpc-connector cloudrun-connector \
             --vpc-egress all-traffic \
-            --set-env-vars "ConnectionStrings__Default=Server=10.128.0.29;Database=InventoryDb;User Id=sa;Password=${{ secrets.DB_PASSWORD }};TrustServerCertificate=True;"
+            --set-env-vars "ConnectionStrings__DefaultConnection=Server=10.128.0.29;Database=InventoryDb;User Id=sa;Password=${{ secrets.DB_PASSWORD }};TrustServerCertificate=True;"
