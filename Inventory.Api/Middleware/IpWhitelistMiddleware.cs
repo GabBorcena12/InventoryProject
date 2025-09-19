@@ -24,7 +24,7 @@ namespace Inventory.Api.Middleware
             if (remoteIp != null && !_whitelistedIPs.Contains(remoteIp.ToString()))
             {
                 context.Response.StatusCode = 403;
-                await context.Response.WriteAsync("Your IP is not allowed.");
+                await context.Response.WriteAsync($"Your IP {remoteIp.ToString()} is not allowed.");
                 return;
             }
 
