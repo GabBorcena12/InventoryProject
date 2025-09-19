@@ -1,10 +1,12 @@
-﻿using InventoryApp.Core.Models;
+﻿using Inventory.Api.Middleware;
+using InventoryApp.Core.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 
 namespace Inventory.Api
 {
@@ -14,20 +16,20 @@ namespace Inventory.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // 1️⃣ Load JWT settings
+            // Load JWT settings
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
 
-            // 2️⃣ Register DbContext
+            // Register DbContext
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // 3️⃣ Add Identity (shared with MVC project)
+            // Add Identity (shared with MVC project)
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            // 4️⃣ Configure JWT authentication
+            // JWT authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -49,25 +51,44 @@ namespace Inventory.Api
                 };
             });
 
-            //listen to 5000 port
+            // listen to 5000 port
             builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
-            // 5️⃣ Add API controllers
+            // Controllers
             builder.Services.AddControllers();
 
-            // 6️⃣ Configure Swagger
+            // Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Inventory POS API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Sales API", Version = "v1.1" });
 
+                // JWT Bearer
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Description = "JWT Authorization header using the Bearer scheme (example: 'Bearer <token>')",
+                    Description = "JWT Authorization header using Bearer scheme",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.ApiKey,
                     Scheme = "Bearer"
+                });
+
+                // X-Api-Key
+                c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+                {
+                    Description = "API Key needed to access the endpoints",
+                    Name = "X-Api-Key",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey
+                });
+
+                // X-Api-Client
+                c.AddSecurityDefinition("ApiClient", new OpenApiSecurityScheme
+                {
+                    Description = "Client identifier (X-Api-Client) for tracking requests",
+                    Name = "X-Api-Client",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -78,19 +99,76 @@ namespace Inventory.Api
                             Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
                         },
                         Array.Empty<string>()
+                    },
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "ApiKey"
+                            }
+                        },
+                        Array.Empty<string>()
+                    },
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ApiClient" }
+                        },
+                        Array.Empty<string>()
                     }
                 });
             });
 
-            // 7️⃣ Build and configure middleware
+            //  Add rate limiting
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                {
+                    // Rate limit per IP
+                    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+                    return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 100,             // set max requests per minute
+                        Window = TimeSpan.FromMinutes(1), // set max requests per minute
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    });
+                });
+
+                options.RejectionStatusCode = 429; // Too Many Requests
+            });
+
+            // Configure CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("OpenCorsPolicy", policy =>
+                {
+                    policy.AllowAnyOrigin()    // Allow requests from any origin
+                          .AllowAnyMethod()    // Allow GET, POST, PUT, DELETE, etc.
+                          .AllowAnyHeader();   // Allow any request headers
+                });
+            });
+
+
+            // Build and configure middleware
             var app = builder.Build();
+
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseMiddleware<RequestLoggingMiddleware>();
+            app.UseCors("OpenCorsPolicy");
+            app.UseRateLimiter();
+            app.UseMiddleware<ApiKeyMiddleware>();
+            app.UseMiddleware<IpWhitelistMiddleware>();
 
             // Enable Swagger in all environments
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Inventory POS API v1");
-                c.RoutePrefix = "swagger"; // Access it at /swagger
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Sales API");
+                c.RoutePrefix = "swagger";
             });
 
             app.MapControllers();
@@ -99,7 +177,7 @@ namespace Inventory.Api
             app.UseAuthorization();
             app.MapControllers();
 
-            // ✅ Auto-apply migrations
+            // Auto-apply migrations
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -114,9 +192,6 @@ namespace Inventory.Api
                     Console.WriteLine($"❌ API: Migration failed: {ex.Message}");
                 }
             }
-
-            app.Run();
-
             app.Run();
         }
     }

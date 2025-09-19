@@ -25,72 +25,118 @@ namespace Inventory.API.Controllers
         }
 
         // GET: api/SalesApi/all
-        [HttpGet("all")]
+        [HttpGet("GetAllSales")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetAllSales()
+        public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetAllSales(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20) // defaults if not provided
         {
-            var sales = from a in _context.POSTransactionHeaders
-                        join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
-                        where !a.IsDeleted
-                            && !b.IsDeleted
-                            && !a.IsVoided
-                        orderby a.TransactionDate descending
-                        select new
-                        {
-                            a.ORNumber,
-                            a.TotalAmount,
-                            a.TransactionDate,
-                            a.CreatedBy,
-                            a.PaymentMethod
-                        };
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 20;
 
-            var dtoList = await sales.Select(s => new TransactionSalesDto
+            var salesQuery = from a in _context.POSTransactionHeaders
+                             join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
+                             where !a.IsDeleted
+                                   && !b.IsDeleted
+                                   && !a.IsVoided
+                             orderby a.TransactionDate descending
+                             select new
+                             {
+                                 a.ORNumber,
+                                 a.TotalAmount,
+                                 a.TransactionDate,
+                                 a.CreatedBy,
+                                 a.PaymentMethod
+                             };
+
+            // Total count for metadata
+            var totalRecords = await salesQuery.CountAsync();
+
+            // Apply pagination
+            var pagedSales = await salesQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => new TransactionSalesDto
+                {
+                    ORNo = s.ORNumber,
+                    TransactionDate = s.TransactionDate,
+                    CashierName = s.CreatedBy,
+                    PaymentMethod = s.PaymentMethod,
+                    TotalAmount = s.TotalAmount
+                })
+                .ToListAsync();
+
+            // Optional: return metadata along with data
+            var response = new
             {
-                ORNo = s.ORNumber,
-                TransactionDate = s.TransactionDate,
-                CashierName = s.CreatedBy,
-                PaymentMethod = s.PaymentMethod,
-                TotalAmount = s.TotalAmount
-            }).ToListAsync();
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                Data = pagedSales
+            };
 
-            return Ok(dtoList);
+            return Ok(response);
         }
-
-        // GET: api/SalesApi/bydaterange?fromDate=2025-09-01&toDate=2025-09-10
-        [HttpGet("bydaterange")]
+        // GET: api/SalesApi/GetSalesByDateRange
+        [HttpGet("GetSalesByDateRange")]
         [Authorize]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetSalesByDateRange(
             [FromQuery] DateTime fromDate,
-            [FromQuery] DateTime toDate)
+            [FromQuery] DateTime toDate,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20) // defaults if not provided
         {
-            var sales = from a in _context.POSTransactionHeaders
-                        join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
-                        where !a.IsDeleted
-                              && !b.IsDeleted
-                              && !a.IsVoided
-                              && a.TransactionDate.Date >= fromDate.Date
-                              && a.TransactionDate.Date <= toDate.Date
-                        orderby a.TransactionDate descending
-                        select new
-                        {
-                            a.ORNumber,
-                            a.TotalAmount,
-                            a.TransactionDate,
-                            a.CreatedBy,
-                            a.PaymentMethod
-                        };
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 20;
 
-            var dtoList = await sales.Select(s => new TransactionSalesDto
+            var salesQuery = from a in _context.POSTransactionHeaders
+                             join b in _context.POSTransactionDetails on a.TransactionHeaderId equals b.TransactionHeaderId
+                             where !a.IsDeleted
+                                   && !b.IsDeleted
+                                   && !a.IsVoided
+                                   && a.TransactionDate.Date >= fromDate.Date
+                                   && a.TransactionDate.Date <= toDate.Date
+                             orderby a.TransactionDate descending
+                             select new
+                             {
+                                 a.ORNumber,
+                                 a.TotalAmount,
+                                 a.TransactionDate,
+                                 a.CreatedBy,
+                                 a.PaymentMethod
+                             };
+
+            // Total count for metadata
+            var totalRecords = await salesQuery.CountAsync();
+
+            // Apply pagination
+            var pagedSales = await salesQuery
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => new TransactionSalesDto
+                {
+                    ORNo = s.ORNumber,
+                    TransactionDate = s.TransactionDate,
+                    CashierName = s.CreatedBy,
+                    PaymentMethod = s.PaymentMethod,
+                    TotalAmount = s.TotalAmount
+                })
+                .ToListAsync();
+
+            // Optional: return metadata along with data
+            var response = new
             {
-                ORNo = s.ORNumber,
-                TransactionDate = s.TransactionDate,
-                CashierName = s.CreatedBy,
-                PaymentMethod = s.PaymentMethod,
-                TotalAmount = s.TotalAmount
-            }).ToListAsync();
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize),
+                Data = pagedSales
+            };
 
-            return Ok(dtoList);
+            return Ok(response);
         }
+
 
         // GET: api/SalesApi/or/OR12345
         [HttpGet("or/{orNumber}")]
