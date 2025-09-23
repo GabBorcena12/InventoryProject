@@ -29,16 +29,14 @@ namespace Inventory.Api
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            // JWT authentication
             builder.Services.AddAuthentication(options =>
             {
+                // You can choose which one is the *default*
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddJwtBearer(options =>
+            .AddJwtBearer("LocalJwt", options =>
             {
-                options.RequireHttpsMetadata = true;
-                options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -49,7 +47,13 @@ namespace Inventory.Api
                     ValidAudience = jwtSettings["Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
                 };
+            })
+            .AddJwtBearer("Auth0", options =>
+            {
+                options.Authority = $"https://{builder.Configuration["Auth0:Domain"]}/";
+                options.Audience = builder.Configuration["Auth0:Audience"];
             });
+
 
             // listen to 5000 port
             builder.WebHost.UseUrls("http://0.0.0.0:5000");
@@ -151,7 +155,6 @@ namespace Inventory.Api
                           .AllowAnyHeader();   // Allow any request headers
                 });
             });
-
 
             // Build and configure middleware
             var app = builder.Build();

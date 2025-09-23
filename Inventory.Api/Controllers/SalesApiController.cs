@@ -26,7 +26,8 @@ namespace Inventory.API.Controllers
 
         // GET: api/SalesApi/all
         [HttpGet("GetAllSales")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "LocalJwt")]
+        //[Authorize(AuthenticationSchemes = "Auth0")]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetAllSales(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20) // defaults if not provided
@@ -80,7 +81,7 @@ namespace Inventory.API.Controllers
         }
         // GET: api/SalesApi/GetSalesByDateRange
         [HttpGet("GetSalesByDateRange")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "LocalJwt")]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetSalesByDateRange(
             [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate,
@@ -140,7 +141,7 @@ namespace Inventory.API.Controllers
 
         // GET: api/SalesApi/or/OR12345
         [HttpGet("or/{orNumber}")]
-        [Authorize]
+        [Authorize(AuthenticationSchemes = "LocalJwt")]
         public async Task<ActionResult<TransactionSalesDto>> GetSaleByORNumber(string orNumber)
         {
             var sale = await (from a in _context.POSTransactionHeaders
