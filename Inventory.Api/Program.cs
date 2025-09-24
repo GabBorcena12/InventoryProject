@@ -15,7 +15,6 @@ namespace Inventory.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
             // Load JWT settings
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
@@ -29,12 +28,14 @@ namespace Inventory.Api
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
+            // Auth0 Authentication (default scheme)
             builder.Services.AddAuthentication(options =>
             {
-                // You can choose which one is the *default*
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
+
+            // comment this temporarily to use Auth0
             .AddJwtBearer("LocalJwt", options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -54,7 +55,6 @@ namespace Inventory.Api
                 options.Audience = builder.Configuration["Auth0:Audience"];
             });
 
-
             // listen to 5000 port
             builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
@@ -67,10 +67,10 @@ namespace Inventory.Api
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Sales API", Version = "v1.1" });
 
-                // JWT Bearer
+                // JWT Bearer (Auth0)
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
-                    Description = "JWT Authorization header using Bearer scheme",
+                    Description = "JWT Authorization header using Bearer scheme. Example: \"Bearer {token}\"",
                     Name = "Authorization",
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.ApiKey,
@@ -107,11 +107,7 @@ namespace Inventory.Api
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "ApiKey"
-                            }
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ApiKey" }
                         },
                         Array.Empty<string>()
                     },
@@ -125,7 +121,7 @@ namespace Inventory.Api
                 });
             });
 
-            //  Add rate limiting
+            // Add rate limiting
             builder.Services.AddRateLimiter(options =>
             {
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
@@ -135,8 +131,8 @@ namespace Inventory.Api
 
                     return RateLimitPartition.GetFixedWindowLimiter(clientIp, _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 100,             // set max requests per minute
-                        Window = TimeSpan.FromMinutes(1), // set max requests per minute
+                        PermitLimit = 100,                // max requests per minute
+                        Window = TimeSpan.FromMinutes(1), // 1-minute window
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit = 0
                     });
@@ -150,9 +146,9 @@ namespace Inventory.Api
             {
                 options.AddPolicy("OpenCorsPolicy", policy =>
                 {
-                    policy.AllowAnyOrigin()    // Allow requests from any origin
-                          .AllowAnyMethod()    // Allow GET, POST, PUT, DELETE, etc.
-                          .AllowAnyHeader();   // Allow any request headers
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
                 });
             });
 
@@ -166,7 +162,7 @@ namespace Inventory.Api
             app.UseMiddleware<ApiKeyMiddleware>();
             app.UseMiddleware<IpWhitelistMiddleware>();
 
-            // Enable Swagger in all environments
+            // Enable Swagger
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -174,7 +170,6 @@ namespace Inventory.Api
                 c.RoutePrefix = "swagger";
             });
 
-            app.MapControllers();
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();

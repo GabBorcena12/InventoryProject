@@ -28,6 +28,7 @@ namespace Inventory.API.Controllers
             _configuration = configuration;
         }
 
+        #region Local JWT
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest model)
         {
@@ -72,5 +73,6 @@ namespace Inventory.API.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        #endregion
     }
 }

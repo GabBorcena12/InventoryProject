@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Inventory.API.Controllers
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = "Auth0")]
+    [Authorize(AuthenticationSchemes = "LocalJwt")]
     [Route("api/[controller]")]
     public class SalesApiController : ControllerBase
     {
@@ -26,8 +28,6 @@ namespace Inventory.API.Controllers
 
         // GET: api/SalesApi/all
         [HttpGet("GetAllSales")]
-        [Authorize(AuthenticationSchemes = "LocalJwt")]
-        //[Authorize(AuthenticationSchemes = "Auth0")]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetAllSales(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20) // defaults if not provided
@@ -81,7 +81,6 @@ namespace Inventory.API.Controllers
         }
         // GET: api/SalesApi/GetSalesByDateRange
         [HttpGet("GetSalesByDateRange")]
-        [Authorize(AuthenticationSchemes = "LocalJwt")]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetSalesByDateRange(
             [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate,
@@ -141,7 +140,6 @@ namespace Inventory.API.Controllers
 
         // GET: api/SalesApi/or/OR12345
         [HttpGet("or/{orNumber}")]
-        [Authorize(AuthenticationSchemes = "LocalJwt")]
         public async Task<ActionResult<TransactionSalesDto>> GetSaleByORNumber(string orNumber)
         {
             var sale = await (from a in _context.POSTransactionHeaders
