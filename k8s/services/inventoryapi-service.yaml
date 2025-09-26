@@ -9,4 +9,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80          # External port exposed by LoadBalancer
-      targetPort: 8080  # Internal container port your app listens on
+      targetPort: 5000  # Must match containerPort inside pod
