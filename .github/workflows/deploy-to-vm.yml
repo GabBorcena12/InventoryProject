@@ -53,7 +53,6 @@ jobs:
 
         echo "📦 Starting MSSQL..."
         docker run -d --name mssql --network inventory-net \
-          --user root \
           -e "ACCEPT_EULA=Y" \
           -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
           -v mssql_data:/var/opt/mssql \
@@ -61,14 +60,15 @@ jobs:
           -p 1433:1433 \
           mcr.microsoft.com/mssql/server:2022-latest
 
-        echo "⏳ Waiting for MSSQL to be ready via logs..."
-        timeout=100
+        echo "⏳ Waiting for MSSQL to be ready (max 3 mins)..."
+        elapsed=0
+        max_wait=100
         while ! docker logs mssql 2>&1 | grep -q "SQL Server is now ready for client connections"; do
           echo "❌ SQL Server not ready yet... sleeping 5s"
           sleep 5
-          timeout=$((timeout - 5))
-          if [ $timeout -le 0 ]; then
-            echo "⛔ MSSQL did not become ready in time."
+          elapsed=$((elapsed + 5))
+          if [ "$elapsed" -ge "$max_wait" ]; then
+            echo "⛔ MSSQL did not become ready in 3 minutes."
             docker logs mssql
             exit 1
           fi
