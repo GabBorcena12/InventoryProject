@@ -1,5 +1,4 @@
 ﻿using Inventory.Api.Dtos;
-using Inventory.API.Dtos;
 using InventoryApp.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,11 +10,11 @@ namespace Inventory.API.Controllers
     [Authorize(AuthenticationSchemes = "Auth0")]
     [Authorize(AuthenticationSchemes = "LocalJwt")]
     [Route("api/[controller]")]
-    public class SalesApiController : ControllerBase
+    public class SalesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
-        public SalesApiController(ApplicationDbContext context)
+        public SalesController(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -27,7 +26,7 @@ namespace Inventory.API.Controllers
         }
 
         // GET: api/SalesApi/all
-        [HttpGet("GetAllSales")]
+        [HttpGet("All")]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetAllSales(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 20) // defaults if not provided
@@ -79,8 +78,9 @@ namespace Inventory.API.Controllers
 
             return Ok(response);
         }
-        // GET: api/SalesApi/GetSalesByDateRange
-        [HttpGet("GetSalesByDateRange")]
+
+        // GET: api/SalesApi/FilterSales
+        [HttpGet("FilterSales")]
         public async Task<ActionResult<IEnumerable<TransactionSalesDto>>> GetSalesByDateRange(
             [FromQuery] DateTime fromDate,
             [FromQuery] DateTime toDate,
@@ -162,7 +162,6 @@ namespace Inventory.API.Controllers
 
             return Ok(sale);
         }
-
 
     }
 }
