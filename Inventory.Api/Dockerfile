@@ -1,5 +1,5 @@
 ﻿# Stage 1 - Build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy project files
@@ -17,7 +17,7 @@ COPY Inventory.Api/ ./Inventory.Api/
 RUN dotnet publish Inventory.Api/Inventory.Api.csproj -c Release -o /app/publish
 
 # Stage 2 - Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 
 # Copy published output
