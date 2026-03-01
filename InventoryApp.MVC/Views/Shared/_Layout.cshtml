@@ -483,7 +483,9 @@
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script>
         function checkIsMobile() {
-            if ($(window).width() <= 1402 && $(window).height() <= 1109) {
+            // if ($(window).width() <= 1402 && $(window).height() <= 1109) {
+            if($(window).width() <= 1402)
+            {
                 $("#mobileNav").removeClass("diplay-none");
                 $("#desktopNav").addClass("diplay-none");
             } else {
