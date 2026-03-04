@@ -208,9 +208,7 @@ public class InventoryController : BaseController
             .FirstOrDefault(p => p.Id == id);
 
         if (product == null)
-        {
             return NotFound();
-        }
 
         ViewBag.UnitOfMeasureList = new SelectList(Enum.GetValues(typeof(UnitOfMeasure)), product.UnitOfMeasure);
         return View(product);
@@ -222,14 +220,14 @@ public class InventoryController : BaseController
     {
         try
         {
+            ViewBag.UnitOfMeasureList = new SelectList(Enum.GetValues(typeof(UnitOfMeasure)), product.UnitOfMeasure);
+
             var modelError = await CaptureModelValidationErrorsAsync("Product", "Edit", "Failed", product.Id, product.ProductName);
             if (!string.IsNullOrEmpty(modelError))
             {
                 TempData["ErrorMessage"] = modelError;
                 return View(product);
             }
-
-            ViewBag.UnitOfMeasureList = new SelectList(Enum.GetValues(typeof(UnitOfMeasure)), product.UnitOfMeasure);
 
             // Validation: Master SKU required
             if (string.IsNullOrWhiteSpace(product.MasterSku))
@@ -242,81 +240,74 @@ public class InventoryController : BaseController
             {
                 ModelState.AddModelError("", "At least one product variant is required.");
             }
-            else
+
+            // Validate Variant details and check for duplicates
+            for (int i = 0; i < product.Variants.Count; i++)
             {
-                for (int i = 0; i < product.Variants.Count; i++)
+                // Variant SKU Validation
+                if (string.IsNullOrWhiteSpace(product.Variants[i].VariantSku))
                 {
-                    // Variant SKU Validation
-                    if (string.IsNullOrWhiteSpace(product.Variants[i].VariantSku))
-                    {
-                        ModelState.AddModelError($"Variants[{i}].VariantSku", $"Please provide a Variant SKU for row {i + 1}.");
-                        break;
-                    }
+                    ModelState.AddModelError($"Variants[{i}].VariantSku", $"Please provide a Variant SKU for row {i + 1}.");
+                    break;
+                }
 
-                    // Variant Code Validation
-                    if (string.IsNullOrWhiteSpace(product.Variants[i].VariantCode))
-                    {
-                        ModelState.AddModelError($"Variants[{i}].VariantCode", $"Please provide a Variant Code for row {i + 1}.");
-                        break;
-                    }
+                // Variant Code Validation
+                if (string.IsNullOrWhiteSpace(product.Variants[i].VariantCode))
+                {
+                    ModelState.AddModelError($"Variants[{i}].VariantCode", $"Please provide a Variant Code for row {i + 1}.");
+                    break;
+                }
 
-                    // Variant Volume Validation
-                    if (product.Variants[i].VariantVolume == 0)
-                    {
-                        ModelState.AddModelError($"Variants[{i}].VariantVolume", $"Please provide a Volume for row {i + 1}.");
-                        break;
-                    }
+                // Variant Volume Validation
+                if (product.Variants[i].VariantVolume == 0)
+                {
+                    ModelState.AddModelError($"Variants[{i}].VariantVolume", $"Please provide a Volume for row {i + 1}.");
+                    break;
+                }
 
-                    // Image defaulting
-                    if (string.IsNullOrWhiteSpace(product.Variants[i].Image))
-                    {
-                        product.Variants[i].Image = "Default.png";
-                    }
+                // Image defaulting
+                if (string.IsNullOrWhiteSpace(product.Variants[i].Image))
+                {
+                    product.Variants[i].Image = "Default.png";
+                }
 
-                    var existingVariant = await _context.ProductVariants
-                        .FirstOrDefaultAsync(v => v.VariantSku == product.Variants[i].VariantSku);
+                var isDuplicateVariantInput = product.Variants
+                    .Where((v, idx) => idx != i)
+                    .Any(v => v.VariantSku?.Trim() == product.Variants[i].VariantSku);
 
-                    // If same SKU exist in DB, skip and do not insert to database
-                    if (existingVariant != null)
-                    {
-                        product.Variants.RemoveAt(i);
-                        i--;
-                    }
-
-                    var isDuplicateVariantInput = product.Variants
-                        .Where((v, idx) => idx != i)
-                        .Any(v => v.VariantSku?.Trim() == product.Variants[i].VariantSku);
-
-                    // if the same Variant SKU exists in another row
-                    if (isDuplicateVariantInput)
-                    {
-                        ModelState.AddModelError($"Variants[{i}].VariantSku", $"Duplicate SKU '{product.Variants[i].VariantSku}' found. Please check and try again.");
-                        break;
-                    }
+                // if the same Variant SKU exists in another row
+                if (isDuplicateVariantInput)
+                {
+                    ModelState.AddModelError($"Variants[{i}].VariantSku", $"Duplicate SKU '{product.Variants[i].VariantSku}' found. Please check and try again.");
+                    break;
                 }
             }
-
-            // Re-check variants after validation loop in case some were removed due to existing SKU
-            if (product.Variants == null || product.Variants.Count == 0)
-            {
-                ModelState.AddModelError("", "At least one product variant is required.");
-            }
-
             if (!ModelState.IsValid)
             {
                 return View(product);
             }
+            
+            await SaveProduct(product);
+            LogAudit("Update", nameof(EditProduct), product.Id.ToString(), $"Product updated {product.ProductName} by {ViewBag.Username}.");
+            TempData["ToastMessage"] = "Product updated successfully!";
+            return RedirectToAction("Products");
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = "Error encountered during saving. Please try again.";
+            return View(product);
+        }
+    }
 
-            // Get existing product from DB
-            var existingProduct = _context.Products
-                .Include(p => p.Variants)
-                .FirstOrDefault(p => p.Id == product.Id);
+    private async Task SaveProduct(InventoryApp.Core.Models.Product product)
+    {
+        // Get existing product detail from database
+        var existingProduct = _context.Products
+            .Include(p => p.Variants)
+            .FirstOrDefault(p => p.Id == product.Id);
 
-            if (existingProduct == null)
-            {
-                return NotFound();
-            }
-
+        if (existingProduct != null)
+        {
             // Update main product properties
             existingProduct.ProductName = product.ProductName;
             existingProduct.ProductAlias = product.ProductAlias;
@@ -341,17 +332,7 @@ public class InventoryController : BaseController
                     Image = variant.Image ?? "Default.png"
                 });
             }
-
             _context.SaveChanges();
-
-            LogAudit("Update", nameof(EditProduct), product.Id.ToString(), $"Product updated {product.ProductName} by {ViewBag.Username}.");
-            TempData["ToastMessage"] = "Product updated successfully!";
-            return RedirectToAction("Products");
-        }
-        catch (Exception ex)
-        {
-            TempData["ErrorMessage"] = "Error encountered during saving. Please try again.";
-            return View(product);
         }
     }
 
