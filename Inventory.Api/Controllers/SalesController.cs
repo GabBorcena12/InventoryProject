@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Inventory.API.Controllers
 {
     [ApiController]
-    [Authorize(AuthenticationSchemes = "Auth0")]
-    [Authorize(AuthenticationSchemes = "LocalJwt")]
+    [Authorize(AuthenticationSchemes = "Auth0,LocalJwt")]
     [Route("api/[controller]")]
     public class SalesController : ControllerBase
     {
